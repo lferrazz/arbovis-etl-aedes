@@ -1,0 +1,33 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Credenciais e configuração local
+.env
+secrets/
+*.json.key
+gcp-key.json
+
+# Dados (não versionar arquivos pesados do DATASUS/CNES)
+data/raw/
+data/processed/
+*.dbc
+*.dbf
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema
+Thumbs.db
+.DS_Store
+
+.claude/
