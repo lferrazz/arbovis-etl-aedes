@@ -537,6 +537,15 @@ def listar_doencas():
 
 
 @_cacheado
+def listar_municipios():
+    """Todos os municípios (~5.571), para a busca da comparação no front."""
+    return _run(
+        f"SELECT cod_ibge, nome_municipio AS municipio, uf FROM {DIM_MUNICIPIO} ORDER BY nome_municipio",
+        [],
+    )
+
+
+@_cacheado
 def listar_ufs():
     linhas = _run(f"SELECT DISTINCT uf FROM {DIM_MUNICIPIO} WHERE uf IS NOT NULL ORDER BY uf", [])
     return [linha["uf"] for linha in linhas]

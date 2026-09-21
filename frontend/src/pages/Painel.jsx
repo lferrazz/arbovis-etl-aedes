@@ -109,11 +109,14 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
     [serie, chaveSerie, granularidade, periodo],
   );
 
-  // Trocar de UF invalida as cidades escolhidas; trocar de doença NÃO — a
-  // comparação é sempre das três doenças, independente da aba.
+  // A seleção NÃO é limpa ao trocar de UF: navegar pelo mapa até outro estado
+  // para achar uma cidade pequena faz parte do fluxo de comparar.
+  // Lista completa para a busca, carregada só quando o modo comparar abre.
+  const [todosMunicipios, setTodosMunicipios] = useState(null);
   useEffect(() => {
-    setComparar([]); setComparacao(null); setModoComparar(false);
-  }, [filtros.uf]);
+    if (!modoComparar || todosMunicipios) return;
+    api("/municipios").then(setTodosMunicipios).catch(() => setTodosMunicipios([]));
+  }, [modoComparar, todosMunicipios]);
 
   const codsComparar = comparar.map((c) => c.cod_ibge).join(",");
   useEffect(() => {
@@ -227,7 +230,7 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
                     cidadesMeso={cidadesMeso} listaMun={listaMun} busca={busca} setBusca={setBusca}
                     bairros={bairros}
                     modoComparar={modoComparar} setModoComparar={setModoComparar}
-                    comparar={comparar} onAlternarComparar={alternarComparar}
+                    comparar={comparar} onAlternarComparar={alternarComparar} todosMunicipios={todosMunicipios}
                     comparacao={comparacao} metricaComp={metricaComp} setMetricaComp={setMetricaComp}
                     onLimparComparacao={limparComparacao} />
       )}

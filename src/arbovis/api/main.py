@@ -43,6 +43,11 @@ def get_limites_periodo():
     return queries.limites_periodo()
 
 
+@app.get("/municipios", dependencies=dep)
+def get_municipios():
+    return queries.listar_municipios()
+
+
 @app.get("/municipios/comparar", dependencies=dep)
 def get_comparar_municipios(
     cods: str = Query(..., description="2 a 4 códigos IBGE separados por vírgula"),

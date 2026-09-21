@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import Mapa from "../Mapa.jsx";
 import { n } from "../Graficos.jsx";
+import BuscaMunicipio from "../BuscaMunicipio.jsx";
 import ComparacaoMunicipios from "./ComparacaoMunicipios.jsx";
 
 export default function VisaoMapas({
@@ -9,7 +10,7 @@ export default function VisaoMapas({
   municipioSel, onSelectMunicipio, onSelectUf,
   cidadesMeso, listaMun, busca, setBusca,
   bairros,
-  modoComparar, setModoComparar, comparar, onAlternarComparar,
+  modoComparar, setModoComparar, comparar, onAlternarComparar, todosMunicipios,
   comparacao, metricaComp, setMetricaComp, onLimparComparacao,
 }) {
   // O card de unidades nasce abaixo da dobra; sem isto o usuário clica na cidade
@@ -33,13 +34,36 @@ export default function VisaoMapas({
         <div className="card mapa">
           <div className="card-topo">
             <h3>{mesorregiaoSel ? `Municípios — ${mesorregiaoSel}` : filtros.uf ? `Mesorregiões de ${filtros.uf}` : "Mesorregiões do Brasil"}</h3>
-            {filtros.uf && (
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="voltar" onClick={onVoltarBrasil}>← Brasil</button>
-                {mesorregiaoSel && <button className="voltar" onClick={onVoltarMesorregioes}>← Mesorregiões</button>}
-              </div>
-            )}
+            <div className="mapa-acoes">
+              {filtros.uf && <button className="voltar" onClick={onVoltarBrasil}>← Brasil</button>}
+              {mesorregiaoSel && <button className="voltar" onClick={onVoltarMesorregioes}>← Mesorregiões</button>}
+              <button className={`voltar ${modoComparar ? "ativo" : ""}`} aria-pressed={modoComparar}
+                      onClick={() => setModoComparar((v) => !v)}>
+                {modoComparar ? "Sair da comparação" : "Comparar cidades"}
+              </button>
+            </div>
           </div>
+          {modoComparar && (
+            <div className="comparar-barra">
+              <BuscaMunicipio municipios={todosMunicipios} selecionados={comparar}
+                              onEscolher={onAlternarComparar} desabilitado={comparar.length >= 4} />
+              <div className="chips">
+                {comparar.map((c) => (
+                  <button key={c.cod_ibge} className="chip" onClick={() => onAlternarComparar(c)}
+                          title="Remover da comparação">
+                    {c.municipio}/{c.uf} <span aria-hidden="true">×</span>
+                  </button>
+                ))}
+                {comparar.length < 2 && (
+                  <span className="dica">
+                    {comparar.length === 0
+                      ? "Escolha de 2 a 4 cidades: busque aqui, clique no mapa ou na lista ao lado."
+                      : "Escolha mais uma cidade para comparar."}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           <Mapa ufSel={filtros.uf} onSelectUf={onSelectUf}
                 onSelectMunicipio={onSelectMunicipio} municipioSel={municipioSel}
                 mesorregioes={mesorregioes} mesoSel={mesorregiaoSel} onSelectMeso={onSelectMeso}
@@ -61,27 +85,9 @@ export default function VisaoMapas({
               </ul>
             </div>
           )}
-          <div className="card-topo">
-            <h3 className={filtros.uf && mesorregioes.length ? "comEspaco" : ""}>
-              {mesorregiaoSel ? `Cidades — ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}` : "Municípios mais afetados"}
-            </h3>
-            <button className={`voltar ${modoComparar ? "ativo" : ""}`}
-                    onClick={() => setModoComparar((v) => !v)}>
-              {modoComparar ? "Sair da comparação" : "Comparar"}
-            </button>
-          </div>
-          {modoComparar && (
-            <div className="chips">
-              {comparar.length === 0
-                ? <span className="dica">Selecione de 2 a 4 cidades na lista.</span>
-                : comparar.map((c) => (
-                    <button key={c.cod_ibge} className="chip" onClick={() => onAlternarComparar(c)}
-                            title="Remover da comparação">
-                      {c.municipio} <span aria-hidden="true">×</span>
-                    </button>
-                  ))}
-            </div>
-          )}
+          <h3 className={`lista-titulo ${filtros.uf && mesorregioes.length ? "comEspaco" : ""}`}>
+            {mesorregiaoSel ? `Cidades — ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}` : "Municípios mais afetados"}
+          </h3>
           {filtros.uf && <input className="busca" placeholder="Buscar cidade…" value={busca} onChange={(e) => setBusca(e.target.value)} />}
           <ul className="ranking rolavel">
             {listaMun.map((m) => {

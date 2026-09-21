@@ -138,20 +138,49 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   padding: 8px 14px; border-radius: 999px; pointer-events: none;
 }
 
-/* Mapa fixo: a coluna acompanha a rolagem da lista ao lado.
-   O `align-self: start` e o `height: auto` são obrigatórios — o `.grade-mapa > .card
-   { height: 100% }` acima faz o card preencher a linha do grid, e um elemento que
-   preenche a linha inteira nunca gruda. */
-@media (min-width: 1001px) {
-  .grade-mapa > .card.mapa { position: sticky; top: 74px; align-self: start; height: auto; }
-}
-
 .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .grade3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .grade-mapa { display: grid; grid-template-columns: 2.4fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 20px; }
+/* O gap do grid já espaça; sem isto a regra `.card + .card` descia a lista 20px. */
+.grade-mapa > .card + .card { margin-top: 0; }
 .grafico { flex: 1 1 auto; min-height: 300px; height: 300px; width: 100%; }
 @media (max-width: 1200px) { .grade3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1000px) { .grade2, .grade3, .grade-mapa { grid-template-columns: 1fr; } }
+
+/* Mapa e lista numa linha de altura FIXA: os dois cards têm sempre o mesmo
+   tamanho, o mapa nunca encolhe, e a lista rola dentro do próprio card em vez
+   de esticar a página. */
+@media (min-width: 1001px) {
+  .grade-mapa { height: clamp(560px, calc(100vh - 190px), 860px); }
+  .grade-mapa > .card { height: 100%; min-height: 0; }
+  .grade-mapa > .card:not(.mapa) { overflow-y: auto; }
+  .grade-mapa .ranking.rolavel { max-height: none; overflow: visible; }
+  /* A altura mínima agora é garantida pelo card; o mapa só preenche o que sobra
+     (senão, com a barra de comparação aberta, estouraria o card). */
+  .grade-mapa .mapa-wrap { min-height: 0; }
+}
+
+/* ---------- Mapa: ações e comparação ---------- */
+.mapa-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.lista-titulo { margin-bottom: 12px !important; }
+.comparar-barra { display: flex; flex-direction: column; gap: 8px; margin: -8px 0 12px; }
+.comparar-barra .chips { margin-bottom: 0; min-height: 28px; }
+.comparar-barra .dica { margin: 0; }
+.busca-mun { position: relative; }
+.busca-mun .busca { margin-bottom: 0; }
+.busca-mun-lista {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1100; /* acima dos controles do Leaflet (1000) */
+  list-style: none; margin: 0; padding: 4px; max-height: 300px; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(20, 30, 50, .12);
+}
+.busca-mun-lista li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px;
+}
+.busca-mun-lista li.ativo { background: var(--panel-2); }
+.busca-mun-lista .uf { color: var(--muted); font-size: 12px; font-weight: 700; }
+.busca-mun-vazio { padding: 10px 12px; color: var(--muted); font-size: 13px; }
 
 /* ---------- Segmentador ---------- */
 .segmentador { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
