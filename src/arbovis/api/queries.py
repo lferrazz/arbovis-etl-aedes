@@ -21,6 +21,7 @@ LEFT JOIN {DIM_MUNICIPIO} m ON f.cod_ibge = m.cod_ibge
 """
 
 _GRAOS = {
+    "dia": "FORMAT_DATE('%Y-%m-%d', f.dt_notificacao)",
     "ano": "FORMAT_DATE('%Y', f.dt_notificacao)",
     "mes": "FORMAT_DATE('%Y-%m', f.dt_notificacao)",
     "semana": "FORMAT_DATE('%Y-%m-%d', DATE_TRUNC(f.dt_notificacao, WEEK(MONDAY)))",
@@ -105,6 +106,113 @@ def serie_temporal(doenca=None, uf=None, inicio=None, fim=None, granularidade="m
         f"SELECT {expr} AS periodo, COUNT(*) AS casos, SUM(f.obito) AS mortes {BASE_JOIN} {where} GROUP BY periodo ORDER BY periodo",
         params,
     )
+
+
+@_cacheado
+def limites_periodo():
+    """Primeira e última data com notificação — define o que o calendário deixa escolher."""
+    where, params = _filtros()
+    linhas = _run(
+        f"SELECT FORMAT_DATE('%Y-%m-%d', MIN(f.dt_notificacao)) AS inicio, "
+        f"FORMAT_DATE('%Y-%m-%d', MAX(f.dt_notificacao)) AS fim FROM {FATO} f {where}",
+        params,
+    )
+    return linhas[0]
+
+
+DOENCAS_COMPARACAO = ("dengue", "zika", "chikungunya")
+
+
+def _por_100mil(quantidade, populacao):
+    """Nunca devolve 0 quando falta população: 0 seria uma afirmação falsa."""
+    return round(quantidade / populacao * 100_000, 1) if populacao else None
+
+
+def _montar_comparacao(cods, linhas):
+    por_municipio: dict[int, dict] = {}
+    for linha in linhas:
+        cod = int(linha["cod_ibge"])
+        municipio = por_municipio.setdefault(cod, {
+            "cod_ibge": cod,
+            "municipio": linha["municipio"],
+            "uf": linha["uf"],
+            "populacao": int(linha["populacao"]) if linha["populacao"] is not None else None,
+            "casos": 0,
+            "obitos": 0,
+            "por_doenca": {d: {"casos": 0, "mortes": 0} for d in DOENCAS_COMPARACAO},
+        })
+        casos = int(linha["casos"] or 0)
+        mortes = int(linha["mortes"] or 0)
+        municipio["casos"] += casos
+        municipio["obitos"] += mortes
+        nome = (linha["doenca"] or "").lower()
+        if nome in municipio["por_doenca"]:
+            municipio["por_doenca"][nome] = {"casos": casos, "mortes": mortes}
+
+    saida = []
+    for cod in cods:  # preserva a ordem em que o usuário escolheu
+        municipio = por_municipio.get(int(cod))
+        if not municipio:
+            continue
+        populacao = municipio["populacao"]
+        casos = municipio["casos"]
+        municipio["letalidade"] = round(municipio["obitos"] / casos * 100, 3) if casos else 0.0
+        municipio["casos_100mil"] = _por_100mil(casos, populacao)
+        municipio["obitos_100mil"] = _por_100mil(municipio["obitos"], populacao)
+        municipio["pct_populacao"] = round(casos / populacao * 100, 1) if populacao else None
+        for dados in municipio["por_doenca"].values():
+            dados["casos_100mil"] = _por_100mil(dados["casos"], populacao)
+        saida.append(municipio)
+    return saida
+
+
+@_cacheado
+def comparar_municipios(cods: tuple[int, ...], inicio=None, fim=None):
+    """Compara municípios lado a lado. Respeita o período, mas ignora o filtro de
+    doença (a comparação já quebra por doença) e o de UF (os municípios são explícitos).
+
+    `cods` precisa ser tupla: @_cacheado usa os argumentos como chave de dicionário.
+    """
+    if not cods:
+        return []
+
+    params = [bigquery.ArrayQueryParameter("cods", "INT64", list(cods))]
+    clausulas = [
+        "f.dt_notificacao BETWEEN DATE '2000-01-01' AND DATE '2026-12-31'",
+        "f.cod_ibge IN UNNEST(@cods)",
+    ]
+    if inicio:
+        clausulas.append("f.dt_notificacao >= @inicio")
+        params.append(bigquery.ScalarQueryParameter("inicio", "DATE", inicio))
+    if fim:
+        clausulas.append("f.dt_notificacao <= @fim")
+        params.append(bigquery.ScalarQueryParameter("fim", "DATE", fim))
+    where = "WHERE " + " AND ".join(clausulas)
+
+    linhas = _run(
+        f"""
+        WITH alvo AS (
+            SELECT cod_ibge, nome_municipio, uf, populacao
+            FROM {DIM_MUNICIPIO} WHERE cod_ibge IN UNNEST(@cods)
+        ),
+        fatos AS (
+            SELECT f.cod_ibge, d.nome AS doenca, COUNT(*) AS casos, SUM(f.obito) AS mortes
+            FROM {FATO} f
+            JOIN {DIM_DOENCA} d ON f.id_doenca = d.id_doenca
+            {where}
+            GROUP BY f.cod_ibge, d.nome
+        )
+        -- LEFT JOIN: município sem nenhum caso no período continua aparecendo na
+        -- comparação, em vez de sumir e parecer erro da tela.
+        SELECT a.cod_ibge, a.nome_municipio AS municipio, a.uf, a.populacao,
+               fa.doenca, IFNULL(fa.casos, 0) AS casos, IFNULL(fa.mortes, 0) AS mortes
+        FROM alvo a
+        LEFT JOIN fatos fa ON fa.cod_ibge = a.cod_ibge
+        ORDER BY a.cod_ibge, fa.doenca
+        """,
+        params,
+    )
+    return _montar_comparacao(cods, linhas)
 
 
 @_cacheado
@@ -247,53 +355,116 @@ def ranking_uf(doenca=None, inicio=None, fim=None, limite=10):
     )
 
 
-# ── Qualidade dos dados: indivíduo (data + cidade) vs "sem informação" ──
-# Um registro é um indivíduo identificado quando tem data E município Faltando qualquer um, vira "sem informação",
-# mas continua contado — não descarta nenhum registro.
-# Só filtra por doença: filtrar por UF/período excluiria os próprios registros
-# sem cidade/data que queremos enxergar aqui.
+# ── Qualidade dos dados ──
+# Um registro é aproveitável quando tem data de notificação E município: sem um
+# deles, ele fica de fora de todas as outras abas (que filtram por data e lugar),
+# mas continua contado aqui — nada é descartado.
+#
+# Respeita doença, UF e período como as outras abas, com duas ressalvas
+# inevitáveis que a tela explica:
+# - com UF selecionada, registro sem município não tem como entrar no recorte;
+# - registro sem data entra no período pelo ano da notificação, que ele sempre tem.
+
+# Campo incompleto → condição de "faltando". Evolução 9 = ignorado no SINAN.
+_CAMPOS_INCOMPLETOS = {
+    "sem_sintomas": "f.categoria_sintomas = 'Sem informação'",
+    "evolucao_ignorada": "(f.evolucao IS NULL OR f.evolucao = 9)",
+    "classificacao_vazia": "f.classificacao IS NULL",
+    "unidade_vazia": "f.co_cnes IS NULL",
+    "sexo_ignorado": "(f.sexo IS NULL OR f.sexo NOT IN ('M', 'F'))",
+    "idade_vazia": "f.idade IS NULL",
+}
+
+
+def _filtros_qualidade(doenca=None, uf=None, inicio=None, fim=None):
+    clausulas: list[str] = []
+    params: list[bigquery.ScalarQueryParameter] = []
+    if doenca:
+        clausulas.append("d.nome = @doenca")
+        params.append(bigquery.ScalarQueryParameter("doenca", "STRING", doenca.lower()))
+    if uf:
+        clausulas.append("m.uf = @uf")
+        params.append(bigquery.ScalarQueryParameter("uf", "STRING", uf.upper()))
+    if inicio:
+        clausulas.append(
+            "(f.dt_notificacao >= @inicio OR (f.dt_notificacao IS NULL AND f.ano >= EXTRACT(YEAR FROM @inicio)))"
+        )
+        params.append(bigquery.ScalarQueryParameter("inicio", "DATE", inicio))
+    if fim:
+        clausulas.append(
+            "(f.dt_notificacao <= @fim OR (f.dt_notificacao IS NULL AND f.ano <= EXTRACT(YEAR FROM @fim)))"
+        )
+        params.append(bigquery.ScalarQueryParameter("fim", "DATE", fim))
+    return clausulas, params
+
 
 @_cacheado
-def qualidade(doenca=None):
-    params = []
-    where = ""
-    if doenca:
-        where = "WHERE d.nome = @doenca"
-        params.append(bigquery.ScalarQueryParameter("doenca", "STRING", doenca.lower()))
+def qualidade(doenca=None, uf=None, inicio=None, fim=None):
+    clausulas, params = _filtros_qualidade(doenca, uf, inicio, fim)
+    where = ("WHERE " + " AND ".join(clausulas)) if clausulas else ""
+    origem = f"""
+        FROM {FATO} f
+        JOIN {DIM_DOENCA} d ON f.id_doenca = d.id_doenca
+        LEFT JOIN {DIM_MUNICIPIO} m ON f.cod_ibge = m.cod_ibge
+    """
+    campos_sql = ",\n".join(f"COUNTIF({cond}) AS {nome}" for nome, cond in _CAMPOS_INCOMPLETOS.items())
+
     linha = _run(
         f"""
         SELECT
             COUNT(*) AS total,
-            COUNTIF(f.dt_notificacao IS NOT NULL AND f.cod_ibge IS NOT NULL) AS identificados,
-            COUNTIF(f.dt_notificacao IS NULL OR f.cod_ibge IS NULL) AS sem_informacao,
+            COUNTIF(f.dt_notificacao IS NOT NULL AND f.cod_ibge IS NOT NULL) AS aproveitaveis,
             COUNTIF(f.dt_notificacao IS NULL) AS sem_data,
             COUNTIF(f.cod_ibge IS NULL) AS sem_municipio,
             COUNTIF(f.cod_ibge_origem = 'cnes') AS municipio_via_cnes,
-            COUNTIF(f.categoria_sintomas = 'Sem informação') AS sem_sintomas
-        FROM {FATO} f
-        JOIN {DIM_DOENCA} d ON f.id_doenca = d.id_doenca
-        {where}
+            {campos_sql}
+        {origem} {where}
         """,
         params,
     )[0]
-    total = linha.get("total") or 0
 
-    def pct(x):
-        return round((x or 0) / total * 100, 1) if total else 0.0
+    # Anos fora de 2000-2026 são erro de digitação do NU_ANO; não viram ponto no gráfico.
+    where_ano = "WHERE " + " AND ".join([*clausulas, "f.ano BETWEEN 2000 AND 2026"])
+    por_ano = _run(
+        f"""
+        SELECT f.ano,
+               COUNT(*) AS total,
+               COUNTIF(f.dt_notificacao IS NOT NULL AND f.cod_ibge IS NOT NULL) AS aproveitaveis,
+               COUNTIF(f.categoria_sintomas != 'Sem informação') AS com_sintomas
+        {origem} {where_ano}
+        GROUP BY f.ano ORDER BY f.ano
+        """,
+        params,
+    )
 
-    ident = linha.get("identificados") or 0
-    sem = linha.get("sem_informacao") or 0
+    total = linha["total"] or 0
+
+    def pct(x, base=total):
+        return round((x or 0) / base * 100, 1) if base else 0.0
+
     return {
         "total": total,
-        "identificados": ident,
-        "pct_identificados": pct(ident),
-        "sem_informacao": sem,
-        "pct_sem_informacao": pct(sem),
-        "sem_data": linha.get("sem_data") or 0,
-        "sem_municipio": linha.get("sem_municipio") or 0,
-        "municipio_via_cnes": linha.get("municipio_via_cnes") or 0,
-        "sem_sintomas": linha.get("sem_sintomas") or 0,
-        "pct_sem_sintomas": pct(linha.get("sem_sintomas") or 0),
+        "aproveitaveis": linha["aproveitaveis"] or 0,
+        "sem_data": linha["sem_data"] or 0,
+        "sem_municipio": linha["sem_municipio"] or 0,
+        "municipio_via_cnes": linha["municipio_via_cnes"] or 0,
+        "pct": {
+            chave: pct(linha[chave])
+            for chave in ("aproveitaveis", "sem_data", "sem_municipio", "municipio_via_cnes")
+        },
+        "campos": {
+            nome: {"faltando": linha[nome] or 0, "pct": pct(linha[nome])}
+            for nome in _CAMPOS_INCOMPLETOS
+        },
+        "por_ano": [
+            {
+                "ano": r["ano"],
+                "total": r["total"],
+                "pct_aproveitaveis": pct(r["aproveitaveis"], r["total"]),
+                "pct_com_sintomas": pct(r["com_sintomas"], r["total"]),
+            }
+            for r in por_ano
+        ],
     }
 
 

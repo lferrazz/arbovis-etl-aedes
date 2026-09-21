@@ -2,10 +2,15 @@ import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { rotuloPeriodo, rotuloPeriodoLongo } from "../datas.js";
 import { Icone } from "./Icones.jsx";
 
 const fmt = new Intl.NumberFormat("pt-BR");
 export const n = (v) => fmt.format(v ?? 0);
+
+// Para taxas: mantém casas decimais e marca ausência como "—", nunca como 0.
+export const nd = (v, casas = 1) =>
+  v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 
 const EIXO = { fill: "#5c6773", fontSize: 12 };
 const GRADE = "#e8edf4";
@@ -17,13 +22,15 @@ const TOOLTIP = {
   boxShadow: "0 4px 12px rgba(20,30,50,.1)",
 };
 
-export function Kpi({ rotulo, valor, cor, icone }) {
+export function Kpi({ rotulo, valor, detalhe, cor, icone }) {
+  const completo = typeof valor === "number" ? n(valor) : valor;
   return (
     <div className="kpi" style={{ "--kpi-cor": cor }}>
       <div className="ico"><Icone nome={icone} /></div>
-      <div>
+      <div className="kpi-texto">
         <div className="rotulo">{rotulo}</div>
-        <div className="valor">{typeof valor === "number" ? n(valor) : valor}</div>
+        <div className="valor" title={completo}>{completo}</div>
+        {detalhe && <div className="kpi-detalhe">{detalhe}</div>}
       </div>
     </div>
   );
@@ -48,15 +55,15 @@ export function BarrasValor({ dados, chaveX, chaveY, cor }) {
   );
 }
 
-export function GraficoTemporal({ dados, cor }) {
+export function GraficoTemporal({ dados, cor, grau = "mes" }) {
   return (
     <div className="grafico">
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={dados} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
         <CartesianGrid stroke={GRADE} strokeDasharray="3 3" />
-        <XAxis dataKey="periodo" tick={EIXO} minTickGap={40} />
+        <XAxis dataKey="periodo" tick={EIXO} minTickGap={40} tickFormatter={(p) => rotuloPeriodo(p, grau)} />
         <YAxis tick={EIXO} width={64} tickFormatter={n} />
-        <Tooltip contentStyle={TOOLTIP} formatter={(v) => n(v)} />
+        <Tooltip contentStyle={TOOLTIP} formatter={(v) => n(v)} labelFormatter={(p) => rotuloPeriodoLongo(p, grau)} />
         <Legend />
         <Line type="monotone" dataKey="casos" name="Casos" stroke={cor} strokeWidth={2} dot={false} />
         <Line type="monotone" dataKey="mortes" name="Mortes" stroke="#f43f5e" strokeWidth={2} dot={false} />
@@ -66,7 +73,30 @@ export function GraficoTemporal({ dados, cor }) {
   );
 }
 
-export function GraficoBarras({ dados, chaveX, chaveY, cor, nome, horizontal }) {
+export function GraficoLinhas({ dados, chaveX, series, formatador = n, dominioY }) {
+  return (
+    <div className="grafico">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={dados} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+        <CartesianGrid stroke={GRADE} strokeDasharray="3 3" />
+        <XAxis dataKey={chaveX} tick={EIXO} minTickGap={24} />
+        <YAxis tick={EIXO} width={52} tickFormatter={formatador} domain={dominioY} />
+        <Tooltip contentStyle={TOOLTIP} formatter={(v) => formatador(v)} />
+        <Legend />
+        {series.map((s) => (
+          <Line key={s.chave} type="monotone" dataKey={s.chave} name={s.nome}
+                stroke={s.cor} strokeWidth={2} dot={{ r: 2.5 }} />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+    </div>
+  );
+}
+
+// `series` (opcional) desenha várias barras agrupadas; sem ela o comportamento é
+// exatamente o de antes, com uma barra só.
+export function GraficoBarras({ dados, chaveX, chaveY, cor, nome, horizontal, series, formatador = n }) {
+  const barras = series || [{ chave: chaveY, nome, cor }];
   return (
     <div className="grafico">
     <ResponsiveContainer width="100%" height="100%">
@@ -78,17 +108,18 @@ export function GraficoBarras({ dados, chaveX, chaveY, cor, nome, horizontal }) 
         <CartesianGrid stroke={GRADE} strokeDasharray="3 3" />
         {horizontal ? (
           <>
-            <XAxis type="number" tick={EIXO} tickFormatter={n} />
+            <XAxis type="number" tick={EIXO} tickFormatter={formatador} />
             <YAxis type="category" dataKey={chaveX} tick={{ ...EIXO, fontSize: 11 }} width={158} />
           </>
         ) : (
           <>
             <XAxis dataKey={chaveX} tick={EIXO} />
-            <YAxis tick={EIXO} width={64} tickFormatter={n} />
+            <YAxis tick={EIXO} width={64} tickFormatter={formatador} />
           </>
         )}
-        <Tooltip contentStyle={TOOLTIP} formatter={(v) => n(v)} cursor={{ fill: "#f1f4f9" }} />
-        <Bar dataKey={chaveY} name={nome} fill={cor} radius={4} />
+        <Tooltip contentStyle={TOOLTIP} formatter={(v) => formatador(v)} cursor={{ fill: "#f1f4f9" }} />
+        {series && <Legend />}
+        {barras.map((b) => <Bar key={b.chave} dataKey={b.chave} name={b.nome} fill={b.cor} radius={4} />)}
       </BarChart>
     </ResponsiveContainer>
     </div>

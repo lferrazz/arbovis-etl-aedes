@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import Mapa from "../Mapa.jsx";
 import { n } from "../Graficos.jsx";
+import ComparacaoMunicipios from "./ComparacaoMunicipios.jsx";
 
 export default function VisaoMapas({
   filtros, onVoltarBrasil, onVoltarMesorregioes,
@@ -7,7 +9,24 @@ export default function VisaoMapas({
   municipioSel, onSelectMunicipio, onSelectUf,
   cidadesMeso, listaMun, busca, setBusca,
   bairros,
+  modoComparar, setModoComparar, comparar, onAlternarComparar,
+  comparacao, metricaComp, setMetricaComp, onLimparComparacao,
 }) {
+  // O card de unidades nasce abaixo da dobra; sem isto o usuário clica na cidade
+  // e não encontra o resultado.
+  const refBairros = useRef(null);
+  const ultimoRolado = useRef(null);
+  const codSel = municipioSel?.cod_ibge;
+
+  useEffect(() => {
+    // No modo comparar o clique não abre as unidades, então não há para onde rolar.
+    if (!codSel || modoComparar || !refBairros.current) return;
+    if (ultimoRolado.current === codSel) return; // não re-rola quando os bairros chegam
+    ultimoRolado.current = codSel;
+    const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    refBairros.current.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
+  }, [codSel, modoComparar]);
+
   return (
     <>
       <div className="grade-mapa">
@@ -42,25 +61,53 @@ export default function VisaoMapas({
               </ul>
             </div>
           )}
-          <h3 className={filtros.uf && mesorregioes.length ? "comEspaco" : ""}>
-            {mesorregiaoSel ? `Cidades — ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}` : "Municípios mais afetados"}
-          </h3>
+          <div className="card-topo">
+            <h3 className={filtros.uf && mesorregioes.length ? "comEspaco" : ""}>
+              {mesorregiaoSel ? `Cidades — ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}` : "Municípios mais afetados"}
+            </h3>
+            <button className={`voltar ${modoComparar ? "ativo" : ""}`}
+                    onClick={() => setModoComparar((v) => !v)}>
+              {modoComparar ? "Sair da comparação" : "Comparar"}
+            </button>
+          </div>
+          {modoComparar && (
+            <div className="chips">
+              {comparar.length === 0
+                ? <span className="dica">Selecione de 2 a 4 cidades na lista.</span>
+                : comparar.map((c) => (
+                    <button key={c.cod_ibge} className="chip" onClick={() => onAlternarComparar(c)}
+                            title="Remover da comparação">
+                      {c.municipio} <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+            </div>
+          )}
           {filtros.uf && <input className="busca" placeholder="Buscar cidade…" value={busca} onChange={(e) => setBusca(e.target.value)} />}
           <ul className="ranking rolavel">
-            {listaMun.map((m) => (
-              <li key={m.cod_ibge} className={municipioSel?.cod_ibge === m.cod_ibge ? "sel" : ""}
-                  onClick={() => onSelectMunicipio(m)} title="Ver bairros">
-                <span className="nome">{m.municipio}{filtros.uf ? "" : `/${m.uf}`}</span>
-                <span className="n">{n(m.casos)}</span>
-              </li>
-            ))}
+            {listaMun.map((m) => {
+              const marcado = comparar.some((c) => c.cod_ibge === m.cod_ibge);
+              const selecionado = !modoComparar && municipioSel?.cod_ibge === m.cod_ibge;
+              return (
+                <li key={m.cod_ibge}
+                    className={`${selecionado ? "sel" : ""} ${marcado ? "marcado" : ""}`}
+                    onClick={() => onSelectMunicipio(m)}
+                    title={modoComparar ? "Adicionar à comparação" : "Ver bairros"}>
+                  <span className="nome">{m.municipio}{filtros.uf ? "" : `/${m.uf}`}</span>
+                  <span className="n">{n(m.casos)}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
-      {municipioSel && (
-        <div className="card">
+      <ComparacaoMunicipios estado={comparacao} metrica={metricaComp}
+                            setMetrica={setMetricaComp} onLimpar={onLimparComparacao} />
+
+      {municipioSel && !modoComparar && (
+        <div className="card card-bairros" ref={refBairros}>
           <h3>Unidades de saúde — {municipioSel.municipio}</h3>
           <p className="dica">Unidade (CNES) que notificou o caso, com o bairro onde fica.</p>
+          {bairros.length === 0 && <p className="dica">Carregando unidades…</p>}
           <div className="grade2">
             {[bairros.slice(0, Math.ceil(bairros.length / 2)),
               bairros.slice(Math.ceil(bairros.length / 2))].map((coluna, col) => (

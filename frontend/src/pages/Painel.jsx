@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { api, periodo } from "../api.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { api } from "../api.js";
 import { n } from "../components/Graficos.jsx";
 import VisaoDemografia from "../components/vistas/VisaoDemografia.jsx";
 import VisaoGeral from "../components/vistas/VisaoGeral.jsx";
@@ -7,6 +7,7 @@ import VisaoMapas from "../components/vistas/VisaoMapas.jsx";
 import VisaoQualidade from "../components/vistas/VisaoQualidade.jsx";
 import VisaoSintomas from "../components/vistas/VisaoSintomas.jsx";
 import VisaoTendencias from "../components/vistas/VisaoTendencias.jsx";
+import { GRAOS, completarSerie, fmtBR, grauPermitido, grauSugerido } from "../datas.js";
 
 const CORES = { dengue: "#ef4444", zika: "#a855f7", chikungunya: "#f59e0b" };
 
@@ -42,19 +43,32 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const cor = CORES[doenca] || "#10a37f";
 
   const [dados, setDados] = useState(null);
-  const [serie, setSerie] = useState([]);
-  const [granularidade, setGranularidade] = useState("mes");
+  const [serie, setSerie] = useState({ chave: "", dados: [] });
+  const [grauEscolhido, setGrauEscolhido] = useState({ chave: "", grau: null });
   const [municipioSel, setMunicipioSel] = useState(null);
   const [bairros, setBairros] = useState([]);
   const [busca, setBusca] = useState("");
   const [mesorregiaoSel, setMesorregiaoSel] = useState(null);
   const [cidadesMeso, setCidadesMeso] = useState(null);
   const [qualidade, setQualidade] = useState(null);
+  const ultimoPedidoBairros = useRef(null);
 
-  const params = useMemo(
-    () => ({ doenca, uf: filtros.uf, ...periodo(filtros.anoInicio, filtros.anoFim) }),
-    [doenca, filtros],
-  );
+  const [modoComparar, setModoComparar] = useState(false);
+  const [comparar, setComparar] = useState([]);
+  const [comparacao, setComparacao] = useState(null);
+  const [metricaComp, setMetricaComp] = useState("por100mil");
+
+  const periodo = useMemo(() => ({ inicio: filtros.inicio, fim: filtros.fim }), [filtros.inicio, filtros.fim]);
+  const params = useMemo(() => ({ doenca, uf: filtros.uf, ...periodo }), [doenca, filtros.uf, periodo]);
+
+  // A escolha manual de granularidade vale só para o período em que foi feita;
+  // mudou o período, volta a sugestão automática (dia/semana/mês/ano).
+  const chavePeriodo = `${periodo.inicio}|${periodo.fim}`;
+  const granularidade =
+    grauEscolhido.chave === chavePeriodo && grauPermitido(grauEscolhido.grau, periodo.inicio, periodo.fim)
+      ? grauEscolhido.grau
+      : grauSugerido(periodo.inicio, periodo.fim);
+  const setGranularidade = (grau) => setGrauEscolhido({ chave: chavePeriodo, grau });
 
   useEffect(() => {
     let vivo = true;
@@ -65,7 +79,7 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       api("/demografia", params),
       api("/estabelecimentos/tipos", params),
       api("/casos/mapa", { ...params, limite: filtros.uf ? 5570 : 20 }),
-      api("/casos/por-uf", { doenca, ...periodo(filtros.anoInicio, filtros.anoFim) }),
+      api("/casos/por-uf", { doenca, ...periodo }),
       api("/casos/sazonalidade", params),
       api("/casos/por-regiao", params),
       api("/casos/desfecho", params),
@@ -76,28 +90,84 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       })
       .catch((e) => vivo && setDados({ erro: e.message }));
     return () => { vivo = false; };
-  }, [params, doenca]);
+  }, [params, periodo, doenca, filtros.uf]);
 
+  const chaveSerie = `${JSON.stringify(params)}|${granularidade}`;
   useEffect(() => {
     let vivo = true;
     api("/casos/temporal", { ...params, granularidade })
-      .then((d) => vivo && setSerie(d)).catch(() => vivo && setSerie([]));
+      .then((d) => vivo && setSerie({ chave: chaveSerie, dados: d }))
+      .catch(() => vivo && setSerie({ chave: chaveSerie, dados: [] }));
     return () => { vivo = false; };
-  }, [params, granularidade]);
+  }, [params, granularidade, chaveSerie]);
 
-  // Isolado: se o /qualidade ainda não existir (antes do re-run do ETL),
-  // só esta aba fica indisponível — não derruba o resto do dashboard.
+  // Enquanto a série nova não chega, não mostra a antiga com o eixo do período novo.
+  const serieVisivel = useMemo(
+    () => (serie.chave === chaveSerie
+      ? completarSerie(serie.dados, granularidade, periodo.inicio, periodo.fim)
+      : []),
+    [serie, chaveSerie, granularidade, periodo],
+  );
+
+  // Trocar de UF invalida as cidades escolhidas; trocar de doença NÃO — a
+  // comparação é sempre das três doenças, independente da aba.
+  useEffect(() => {
+    setComparar([]); setComparacao(null); setModoComparar(false);
+  }, [filtros.uf]);
+
+  const codsComparar = comparar.map((c) => c.cod_ibge).join(",");
+  useEffect(() => {
+    if (comparar.length < 2) { setComparacao(null); return undefined; }
+    let vivo = true;
+    setComparacao({ carregando: true });
+    api("/municipios/comparar", { cods: codsComparar, ...periodo })
+      .then((d) => vivo && setComparacao({ dados: d }))
+      .catch((e) => vivo && setComparacao({ erro: e.message }));
+    return () => { vivo = false; };
+    // comparar.length vem de codsComparar; depender da string evita refetch por identidade nova
+  }, [codsComparar, comparar.length, periodo]);
+
+  function alternarComparar(m) {
+    setComparar((atual) => {
+      if (atual.some((c) => c.cod_ibge === m.cod_ibge)) {
+        return atual.filter((c) => c.cod_ibge !== m.cod_ibge);
+      }
+      if (atual.length >= 4) return atual;
+      return [...atual, { cod_ibge: m.cod_ibge, municipio: m.municipio, uf: m.uf || filtros.uf }];
+    });
+  }
+
+  function limparComparacao() {
+    setComparar([]); setModoComparar(false);
+  }
+
+  // Um handler só para as duas origens de clique (lista e polígono do mapa),
+  // senão "escolher um município" faria coisas diferentes em cada lugar.
+  function selecionarMunicipio(m) {
+    if (modoComparar) alternarComparar(m);
+    else abrirMunicipio(m);
+  }
+
+  // Isolado dos demais: se /qualidade falhar, só esta aba mostra o erro.
+  // Usa os mesmos filtros das outras abas (doença, UF e período).
   useEffect(() => {
     let vivo = true;
-    api("/qualidade", { doenca })
-      .then((d) => vivo && setQualidade(d)).catch(() => vivo && setQualidade(null));
+    setQualidade({ carregando: true });
+    api("/qualidade", params)
+      .then((d) => vivo && setQualidade(d))
+      .catch((e) => vivo && setQualidade({ erro: e.message }));
     return () => { vivo = false; };
-  }, [doenca]);
+  }, [params]);
 
   function abrirMunicipio(m) {
     setMunicipioSel(m);
-    api(`/bairros/${m.cod_ibge}`, { doenca, ...periodo(filtros.anoInicio, filtros.anoFim) })
-      .then(setBairros).catch(() => setBairros([]));
+    // Limpa a lista anterior e ignora resposta atrasada de uma cidade já trocada —
+    // senão a tela rola até um card ainda mostrando as unidades da cidade anterior.
+    setBairros([]);
+    ultimoPedidoBairros.current = m.cod_ibge;
+    api(`/bairros/${m.cod_ibge}`, { doenca, ...periodo })
+      .then((d) => { if (ultimoPedidoBairros.current === m.cod_ibge) setBairros(d); })
+      .catch(() => { if (ultimoPedidoBairros.current === m.cod_ibge) setBairros([]); });
   }
 
   function abrirMeso(meso) {
@@ -121,17 +191,23 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const nomeExib = nomeExibicao(doenca);
   const local = filtros.uf || "o Brasil";
   const listaMun = listaMunicipios(cidades, busca, !!filtros.uf);
+  const grausPermitidos = Object.fromEntries(
+    GRAOS.map(([g]) => [g, grauPermitido(g, periodo.inicio, periodo.fim)]),
+  );
 
   const SUBS = {
     geral: (
-      <>Entre {filtros.anoInicio} e {filtros.anoFim}, {local} registrou <b>{n(resumo.casos)}</b>{" "}
+      <>Entre {fmtBR(periodo.inicio)} e {fmtBR(periodo.fim)}, {local} registrou <b>{n(resumo.casos)}</b>{" "}
         casos {doenca ? `de ${nomeExib}` : "das arboviroses"}, com <b>{n(resumo.obitos)}</b> óbitos.</>
     ),
     mapas: "Clique numa mesorregião para filtrar por estado; depois, clique novamente para ver os municípios.",
-    tendencias: "Casos e óbitos ao longo do tempo — ajuste a granularidade (semana, mês ou ano).",
+    tendencias: (
+      <>Casos e óbitos de {fmtBR(periodo.inicio)} a {fmtBR(periodo.fim)}. A granularidade se ajusta ao
+        período escolhido no calendário, e dá para trocar entre dia, semana, mês e ano.</>
+    ),
     demografia: "Distribuição das notificações por faixa etária.",
     sintomas: "Sinais clínicos mais relatados e os tipos de unidade que absorvem os casos.",
-    qualidade: "Quantos registros são indivíduos (com data e cidade) e quantos ficaram sem informação. Considera toda a base — ignora os filtros de UF e período.",
+    qualidade: "Quanto da base está completa e o que falta em cada campo, no mesmo recorte de doença, UF e período das outras abas. Registros sem data entram no período pelo ano da notificação.",
   };
 
   return (
@@ -140,20 +216,25 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       <p className="vista-sub">{SUBS[vista]}</p>
 
       {vista === "geral" && (
-        <VisaoGeral cor={cor} resumo={resumo} serie={serie} mapa={mapa}
+        <VisaoGeral cor={cor} resumo={resumo} serie={serieVisivel} grau={granularidade} mapa={mapa}
                     sazonal={sazonal} regiao={regiao} desfecho={desfecho} ufSel={filtros.uf} />
       )}
 
       {vista === "mapas" && (
         <VisaoMapas filtros={filtros} onVoltarBrasil={voltarBrasil} onVoltarMesorregioes={limparSelecaoMapa}
                     mesorregioes={mesorregioes} mesorregiaoSel={mesorregiaoSel} onSelectMeso={abrirMeso}
-                    municipioSel={municipioSel} onSelectMunicipio={abrirMunicipio} onSelectUf={selecionarUf}
+                    municipioSel={municipioSel} onSelectMunicipio={selecionarMunicipio} onSelectUf={selecionarUf}
                     cidadesMeso={cidadesMeso} listaMun={listaMun} busca={busca} setBusca={setBusca}
-                    bairros={bairros} />
+                    bairros={bairros}
+                    modoComparar={modoComparar} setModoComparar={setModoComparar}
+                    comparar={comparar} onAlternarComparar={alternarComparar}
+                    comparacao={comparacao} metricaComp={metricaComp} setMetricaComp={setMetricaComp}
+                    onLimparComparacao={limparComparacao} />
       )}
 
       {vista === "tendencias" && (
-        <VisaoTendencias cor={cor} serie={serie} granularidade={granularidade} setGranularidade={setGranularidade}
+        <VisaoTendencias cor={cor} serie={serieVisivel} granularidade={granularidade}
+                         setGranularidade={setGranularidade} permitidos={grausPermitidos}
                          sazonal={sazonal} rankingUf={rankingUf(porUf)} />
       )}
 
@@ -165,7 +246,7 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
         <VisaoSintomas cor={cor} sintomas={sintomas} tipos={tipos} tiposPct={tiposPct(tipos)} />
       )}
 
-      {vista === "qualidade" && <VisaoQualidade qualidade={qualidade} />}
+      {vista === "qualidade" && <VisaoQualidade qualidade={qualidade} ufSel={filtros.uf} />}
     </>
   );
 }

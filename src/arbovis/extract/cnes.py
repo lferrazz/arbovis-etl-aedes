@@ -5,6 +5,8 @@ import asyncio
 import pandas as pd
 from pysus.api import PySUSClient
 
+from arbovis.extract.alias import resolver_alias
+
 UFS = [
     "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
     "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
@@ -19,7 +21,7 @@ async def _baixar_uf(client: PySUSClient, uf: str, ano: int, mes: int) -> pd.Dat
     if not arquivos:
         return None
     local = await client.download(arquivos[0])
-    df = pd.read_parquet(local.path)
+    df = pd.read_parquet(resolver_alias(local.path))
     return df[[c for c in COLUNAS_CNES if c in df.columns]]
 
 

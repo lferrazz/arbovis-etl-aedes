@@ -12,9 +12,11 @@
 --    Não são obrigatórios: a carga do pandas cria as tabelas automaticamente.
 -- =====================================================================
 
--- Dimensão Município (origem: API de Localidades do IBGE).
+-- Dimensão Município (origem: API de Localidades + agregados do IBGE).
 -- cod_ibge   : código oficial de 7 dígitos.
 -- cod_ibge_6 : código de 6 dígitos (sem dígito verificador) usado pelo SINAN.
+-- populacao  : população residente do Censo 2022. NULL para municípios criados
+--              depois do Censo (hoje só Boa Esperança do Norte/MT).
 CREATE TABLE IF NOT EXISTS `gold.dim_municipio` (
     cod_ibge        INT64 NOT NULL,
     cod_ibge_6      INT64 NOT NULL,
@@ -22,6 +24,8 @@ CREATE TABLE IF NOT EXISTS `gold.dim_municipio` (
     uf              STRING,
     estado          STRING,
     regiao          STRING,
+    mesorregiao     STRING,
+    populacao       INT64,
     PRIMARY KEY (cod_ibge) NOT ENFORCED
 );
 

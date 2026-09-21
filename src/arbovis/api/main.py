@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from arbovis.api import queries
@@ -34,8 +34,28 @@ def get_indicadores(doenca: str | None = Doenca, uf: str | None = Uf,
 @app.get("/casos/temporal", dependencies=dep)
 def get_temporal(doenca: str | None = Doenca, uf: str | None = Uf,
                  inicio: date | None = Inicio, fim: date | None = Fim,
-                 granularidade: str = Query("mes", pattern="^(ano|mes|semana)$")):
+                 granularidade: str = Query("mes", pattern="^(ano|mes|semana|dia)$")):
     return queries.serie_temporal(doenca, uf, inicio, fim, granularidade)
+
+
+@app.get("/periodo/limites", dependencies=dep)
+def get_limites_periodo():
+    return queries.limites_periodo()
+
+
+@app.get("/municipios/comparar", dependencies=dep)
+def get_comparar_municipios(
+    cods: str = Query(..., description="2 a 4 códigos IBGE separados por vírgula"),
+    inicio: date | None = Inicio, fim: date | None = Fim,
+):
+    try:
+        # tupla (não lista): queries._cacheado usa os argumentos como chave de dicionário.
+        lista = tuple(dict.fromkeys(int(c) for c in cods.split(",") if c.strip()))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Códigos IBGE inválidos.")
+    if not 2 <= len(lista) <= 4:
+        raise HTTPException(status_code=400, detail="Informe de 2 a 4 códigos IBGE.")
+    return queries.comparar_municipios(lista, inicio, fim)
 
 
 @app.get("/casos/mapa", dependencies=dep)
@@ -95,8 +115,9 @@ def get_ranking_uf(doenca: str | None = Doenca,
 
 
 @app.get("/qualidade", dependencies=dep)
-def get_qualidade(doenca: str | None = Doenca):
-    return queries.qualidade(doenca)
+def get_qualidade(doenca: str | None = Doenca, uf: str | None = Uf,
+                  inicio: date | None = Inicio, fim: date | None = Fim):
+    return queries.qualidade(doenca, uf, inicio, fim)
 
 
 @app.get("/sintomas", dependencies=dep)

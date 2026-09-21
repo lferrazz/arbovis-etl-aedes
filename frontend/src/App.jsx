@@ -3,8 +3,9 @@ import { NavLink, Route, Routes } from "react-router-dom";
 import { api } from "./api.js";
 import Painel from "./pages/Painel.jsx";
 import { Icone } from "./components/Icones.jsx";
+import SeletorPeriodo from "./components/SeletorPeriodo.jsx";
+import { LIMITES_PADRAO, PERIODO_PADRAO } from "./datas.js";
 
-const ANOS = Array.from({ length: 26 }, (_, i) => 2000 + i);
 const VISTAS = [
   ["geral", "Visão Geral"],
   ["mapas", "Mapas Interativos"],
@@ -16,14 +17,19 @@ const VISTAS = [
 
 export default function App() {
   const [ufs, setUfs] = useState([]);
-  const [filtros, setFiltros] = useState({ uf: "", anoInicio: 2000, anoFim: 2025 });
+  const [limites, setLimites] = useState(LIMITES_PADRAO);
+  const [filtros, setFiltros] = useState({ uf: "", ...PERIODO_PADRAO });
   const [vista, setVista] = useState("geral");
 
   useEffect(() => {
     api("/ufs").then(setUfs).catch(() => setUfs([]));
+    api("/periodo/limites")
+      .then((l) => l?.inicio && l?.fim && setLimites(l))
+      .catch(() => {});
   }, []);
 
   const set = (campo) => (e) => setFiltros((f) => ({ ...f, [campo]: e.target.value }));
+  const aplicarPeriodo = (inicio, fim) => setFiltros((f) => ({ ...f, inicio, fim }));
 
   const props = { filtros, setFiltros, vista };
 
@@ -53,24 +59,13 @@ export default function App() {
           <div className="esticar" />
           <div className="filtros">
             <div className="campo">
-              <label>UF</label>
-              <select value={filtros.uf} onChange={set("uf")}>
+              <label htmlFor="filtro-uf">UF</label>
+              <select id="filtro-uf" value={filtros.uf} onChange={set("uf")}>
                 <option value="">Brasil</option>
                 {ufs.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
               </select>
             </div>
-            <div className="campo">
-              <label>De</label>
-              <select value={filtros.anoInicio} onChange={set("anoInicio")}>
-                {ANOS.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div className="campo">
-              <label>Até</label>
-              <select value={filtros.anoFim} onChange={set("anoFim")}>
-                {ANOS.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
+            <SeletorPeriodo inicio={filtros.inicio} fim={filtros.fim} limites={limites} onAplicar={aplicarPeriodo} />
           </div>
         </div>
 

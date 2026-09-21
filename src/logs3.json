@@ -1,0 +1,802 @@
+[
+  {
+    "insertId": "6aa57960000d16ea4085589f",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "Job ID: 2d9895c6-3c3d-4c5c-9a71-ce0163a56486",
+    "timestamp": "2026-09-12T16:10:08.857834Z"
+  },
+  {
+    "insertId": "6aa57960000d16e536f661e1",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "Location: southamerica-east1",
+    "timestamp": "2026-09-12T16:10:08.857829Z"
+  },
+  {
+    "insertId": "6aa57960000d16dfcad8f95b",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "google.api_core.exceptions.NotFound: 404 Not found: Table project-33ec3ca8-e102-483c-857:gold.dim_municipio was not found in location southamerica-east1; reason: notFound, message: Not found: Table project-33ec3ca8-e102-483c-857:gold.dim_municipio was not found in location southamerica-east1",
+    "timestamp": "2026-09-12T16:10:08.857823Z"
+  },
+  {
+    "insertId": "6aa57960000d16d9da01a487",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    raise job_failed_exception",
+    "timestamp": "2026-09-12T16:10:08.857817Z"
+  },
+  {
+    "insertId": "6aa57960000d16d426a2d52a",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/cloud/bigquery/job/query.py\", line 1746, in is_job_done",
+    "timestamp": "2026-09-12T16:10:08.857812Z"
+  },
+  {
+    "insertId": "6aa57960000d16cfed0adde2",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    result = target()",
+    "timestamp": "2026-09-12T16:10:08.857807Z"
+  },
+  {
+    "insertId": "6aa57960000d16caeeb45e33",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py\", line 148, in retry_target",
+    "timestamp": "2026-09-12T16:10:08.857802Z"
+  },
+  {
+    "insertId": "6aa57960000d16c47568dec6",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    raise final_exc from source_exc",
+    "timestamp": "2026-09-12T16:10:08.857796Z"
+  },
+  {
+    "insertId": "6aa57960000d16c027bb56a5",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/api_core/retry/retry_base.py\", line 215, in _retry_error_helper",
+    "timestamp": "2026-09-12T16:10:08.857792Z"
+  },
+  {
+    "insertId": "6aa57960000d16bb858bd383",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    )",
+    "timestamp": "2026-09-12T16:10:08.857787Z"
+  },
+  {
+    "insertId": "6aa57960000d16b6d276045a",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "        timeout,",
+    "timestamp": "2026-09-12T16:10:08.857782Z"
+  },
+  {
+    "insertId": "6aa57960000d16b206c56208",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    ...<6 lines>...",
+    "timestamp": "2026-09-12T16:10:08.857778Z"
+  },
+  {
+    "insertId": "6aa57960000d16ad37029344",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "        exc,",
+    "timestamp": "2026-09-12T16:10:08.857773Z"
+  },
+  {
+    "insertId": "6aa57960000d16a825614e45",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    next_sleep = _retry_error_helper(",
+    "timestamp": "2026-09-12T16:10:08.857768Z"
+  },
+  {
+    "insertId": "6aa57960000d16a18ae5000f",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py\", line 157, in retry_target",
+    "timestamp": "2026-09-12T16:10:08.857761Z"
+  },
+  {
+    "insertId": "6aa57960000d169cbd01e9fa",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    )",
+    "timestamp": "2026-09-12T16:10:08.857756Z"
+  },
+  {
+    "insertId": "6aa57960000d1697a9a23919",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "        on_error=on_error,",
+    "timestamp": "2026-09-12T16:10:08.857751Z"
+  },
+  {
+    "insertId": "6aa57960000d169204b4b2db",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    ...<3 lines>...",
+    "timestamp": "2026-09-12T16:10:08.857746Z"
+  },
+  {
+    "insertId": "6aa57960000d168da7a7c891",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "        target,",
+    "timestamp": "2026-09-12T16:10:08.857741Z"
+  },
+  {
+    "insertId": "6aa57960000d1689eb055552",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    return retry_target(",
+    "timestamp": "2026-09-12T16:10:08.857737Z"
+  },
+  {
+    "insertId": "6aa57960000d1684e388a0a4",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py\", line 295, in retry_wrapped_func",
+    "timestamp": "2026-09-12T16:10:08.857732Z"
+  },
+  {
+    "insertId": "6aa57960000d167e3fe7a959",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "              ~~~~~~~~~~~^^",
+    "timestamp": "2026-09-12T16:10:08.857726Z"
+  },
+  {
+    "insertId": "6aa57960000d1679baee6427",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    while not is_job_done():",
+    "timestamp": "2026-09-12T16:10:08.857721Z"
+  },
+  {
+    "insertId": "6aa57960000d1674a99f7ff0",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/google/cloud/bigquery/job/query.py\", line 1797, in result",
+    "timestamp": "2026-09-12T16:10:08.857716Z"
+  },
+  {
+    "insertId": "6aa57960000d166f81cdbe67",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^",
+    "timestamp": "2026-09-12T16:10:08.857711Z"
+  },
+  {
+    "insertId": "6aa57960000d166aa4861395",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    return [dict(r) for r in _client().query(sql, job_config=cfg).result()]",
+    "timestamp": "2026-09-12T16:10:08.857706Z"
+  },
+  {
+    "insertId": "6aa57960000d16652db60f26",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/workspace/arbovis/api/queries.py\", line 65, in _run",
+    "timestamp": "2026-09-12T16:10:08.857701Z"
+  },
+  {
+    "insertId": "6aa57960000d1660beb241a7",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    linhas = _run(f\"SELECT DISTINCT uf FROM {DIM_MUNICIPIO} WHERE uf IS NOT NULL ORDER BY uf\", [])",
+    "timestamp": "2026-09-12T16:10:08.857696Z"
+  },
+  {
+    "insertId": "6aa57960000d165a4c53de12",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/workspace/arbovis/api/queries.py\", line 370, in listar_ufs",
+    "timestamp": "2026-09-12T16:10:08.857690Z"
+  },
+  {
+    "insertId": "6aa57960000d1655ae807f76",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    resultado = fn(*args, **kwargs)",
+    "timestamp": "2026-09-12T16:10:08.857685Z"
+  },
+  {
+    "insertId": "6aa57960000d164f06ee31bf",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/workspace/arbovis/api/queries.py\", line 51, in wrapper",
+    "timestamp": "2026-09-12T16:10:08.857679Z"
+  },
+  {
+    "insertId": "6aa57960000d164af1feea87",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "           ~~~~~~~~~~~~~~~~~~^^",
+    "timestamp": "2026-09-12T16:10:08.857674Z"
+  },
+  {
+    "insertId": "6aa57960000d1645613f1310",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    return queries.listar_ufs()",
+    "timestamp": "2026-09-12T16:10:08.857669Z"
+  },
+  {
+    "insertId": "6aa57960000d1641906ae06d",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/workspace/arbovis/api/main.py\", line 133, in get_ufs",
+    "timestamp": "2026-09-12T16:10:08.857665Z"
+  },
+  {
+    "insertId": "6aa57960000d163ce0a70e43",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    result = context.run(func, *args)",
+    "timestamp": "2026-09-12T16:10:08.857660Z"
+  },
+  {
+    "insertId": "6aa57960000d16371bcfdf00",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run",
+    "timestamp": "2026-09-12T16:10:08.857655Z"
+  },
+  {
+    "insertId": "6aa57960000d1633589bc580",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "           ^^^^^^^^^^^^",
+    "timestamp": "2026-09-12T16:10:08.857651Z"
+  },
+  {
+    "insertId": "6aa57960000d162ec7c484b4",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    return await future",
+    "timestamp": "2026-09-12T16:10:08.857646Z"
+  },
+  {
+    "insertId": "6aa57960000d1629e9ab3824",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  File \"/layers/google.python.pip/pip/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread",
+    "timestamp": "2026-09-12T16:10:08.857641Z"
+  },
+  {
+    "insertId": "6aa57960000d1624d44701f4",
+    "labels": {
+      "instanceId": "00a41e8c1d06cf3e90c02362c9fb1cc9de4b95f520ca67a8c3fc708abc9ced70ddc1972fad26b5cbee94811ffcbb417f43d27784245c35f9dee92c0f20f9d6f73eaabf6983c126cc2e9d10c7ed53"
+    },
+    "logName": "projects/project-33ec3ca8-e102-483c-857/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-09-12T16:10:09.076669322Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "backend-tcc",
+        "location": "southamerica-east1",
+        "project_id": "project-33ec3ca8-e102-483c-857",
+        "revision_name": "backend-tcc-00004-kbf",
+        "service_name": "backend-tcc"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    ^",
+    "timestamp": "2026-09-12T16:10:08.857636Z"
+  }
+]

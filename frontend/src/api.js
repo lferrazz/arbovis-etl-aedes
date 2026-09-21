@@ -21,13 +21,6 @@ export async function api(path, params = {}) {
   return data;
 }
 
-export function periodo(anoInicio, anoFim) {
-  return {
-    inicio: anoInicio ? `${anoInicio}-01-01` : undefined,
-    fim: anoFim ? `${anoFim}-12-31` : undefined,
-  };
-}
-
 // ── IBGE GeoJSON ──
 
 const MALHA_BR_MESO =

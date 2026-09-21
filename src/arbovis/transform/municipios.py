@@ -38,7 +38,9 @@ def _mesorregiao(micro: dict | None) -> str | None:
     return None
 
 
-def transformar_municipios(df_bruto: pd.DataFrame) -> pd.DataFrame:
+def transformar_municipios(
+    df_bruto: pd.DataFrame, df_populacao: pd.DataFrame | None = None
+) -> pd.DataFrame:
     micro = df_bruto["microrregiao"]
     imediata = df_bruto["regiao-imediata"]
 
@@ -54,4 +56,16 @@ def transformar_municipios(df_bruto: pd.DataFrame) -> pd.DataFrame:
     df["cod_ibge_6"] = df["cod_ibge"] // 10
 
     df = df.drop_duplicates(subset=["cod_ibge"]).reset_index(drop=True)
+
+    # LEFT a partir da dimensão: ela tem 5.571 municípios e o Censo 2022 tem 5.570
+    # (os criados depois ficam sem população, e precisam continuar na dimensão).
+    if df_populacao is not None:
+        pop = df_populacao.drop_duplicates(subset=["cod_ibge"])
+        df = df.merge(pop[["cod_ibge", "populacao"]], on="cod_ibge", how="left")
+    else:
+        df["populacao"] = pd.NA
+
+    # Int64 (nullable) e não int64: com um nulo o NumPy converteria para float,
+    # e a coluna chegaria ao BigQuery como FLOAT.
+    df["populacao"] = df["populacao"].astype("Int64")
     return df

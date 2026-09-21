@@ -1,6 +1,6 @@
 import { BarrasValor, GraficoBarras, GraficoTemporal, Kpi, n } from "../Graficos.jsx";
 
-export default function VisaoGeral({ cor, resumo, serie, mapa, sazonal, regiao, desfecho, ufSel }) {
+export default function VisaoGeral({ cor, resumo, serie, grau, mapa, sazonal, regiao, desfecho, ufSel }) {
   return (
     <>
       <div className="kpis">
@@ -14,7 +14,7 @@ export default function VisaoGeral({ cor, resumo, serie, mapa, sazonal, regiao, 
       <div className="grade-mapa">
         <div className="card">
           <div className="card-topo"><h3>Evolução dos casos</h3></div>
-          <GraficoTemporal dados={serie} cor={cor} />
+          <GraficoTemporal dados={serie} cor={cor} grau={grau} />
         </div>
         <div className="card">
           <h3>Locais mais afetados</h3>

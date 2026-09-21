@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GeoJSON, MapContainer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -28,6 +28,55 @@ function AjustarVista({ bounds }) {
   return null;
 }
 
+// O zoom mínimo fixo deixava afastar até o Brasil virar um ponto dentro do card.
+// Aqui o piso passa a ser o zoom em que o Brasil ainda cabe inteiro — recalculado
+// quando o card muda de tamanho, já que depende da largura disponível.
+function ZoomMinimo() {
+  const map = useMap();
+  useEffect(() => {
+    let quadro = 0;
+    const ajustar = () => {
+      const minimo = map.getBoundsZoom(BOUNDS_BR);
+      map.setMinZoom(Math.min(minimo, map.getMaxZoom()));
+      if (map.getZoom() < minimo) map.setZoom(minimo, { animate: false });
+    };
+    ajustar();
+    // ResizeObserver e não map.on("resize"): o Leaflet só percebe resize da janela,
+    // e aqui a largura do card muda sozinha (mapa fixo, card de comparação abrindo).
+    const observador = new ResizeObserver(() => {
+      cancelAnimationFrame(quadro);
+      quadro = requestAnimationFrame(() => {
+        map.invalidateSize({ animate: false });
+        ajustar();
+      });
+    });
+    observador.observe(map.getContainer());
+    return () => { cancelAnimationFrame(quadro); observador.disconnect(); };
+  }, [map]);
+  return null;
+}
+
+// Rolar o mouse sobre o mapa dava zoom em vez de rolar a página. Agora a roda só
+// dá zoom com Ctrl pressionado (padrão de mapa embutido); sem Ctrl, a página rola.
+function ZoomComCtrl({ aoRolarSemCtrl }) {
+  const map = useMap();
+  useEffect(() => {
+    const elemento = map.getContainer();
+    const aoRolar = (evento) => {
+      if (!evento.ctrlKey) {
+        aoRolarSemCtrl();
+        return;
+      }
+      evento.preventDefault();
+      const passo = evento.deltaY < 0 ? 1 : -1;
+      map.setZoomAround(map.mouseEventToContainerPoint(evento), map.getZoom() + passo);
+    };
+    elemento.addEventListener("wheel", aoRolar, { passive: false });
+    return () => elemento.removeEventListener("wheel", aoRolar);
+  }, [map, aoRolarSemCtrl]);
+  return null;
+}
+
 export default function Mapa({
   ufSel, onSelectUf, onSelectMunicipio, municipioSel,
   mesorregioes, mesoSel, onSelectMeso, cidadesMeso,
@@ -40,6 +89,16 @@ export default function Mapa({
   const [nomesMesoUf, setNomesMesoUf] = useState({});
   const [bounds, setBounds] = useState(null);
   const mesoBoundsRef = useRef({});
+
+  const [aviso, setAviso] = useState(false);
+  const avisoTimerRef = useRef(null);
+  // Estável entre renders: o listener de wheel depende desta função.
+  const avisarSobreCtrl = useCallback(() => {
+    setAviso(true);
+    clearTimeout(avisoTimerRef.current);
+    avisoTimerRef.current = setTimeout(() => setAviso(false), 1800);
+  }, []);
+  useEffect(() => () => clearTimeout(avisoTimerRef.current), []);
 
   useEffect(() => {
     Promise.all([buscarMalhaBrMeso(), buscarNomesMesoBr()])
@@ -169,13 +228,16 @@ export default function Mapa({
   }
 
   return (
-    <MapContainer
-      center={[-15, -54]} zoom={3.6}
-      minZoom={3.2} maxZoom={9}
-      maxBounds={[[-36, -78], [8, -30]]} maxBoundsViscosity={1}
-      style={{ flex: 1, minHeight: 440, background: "transparent", borderRadius: 12 }}
-      attributionControl={false} scrollWheelZoom
-    >
+    <div className="mapa-wrap">
+      <MapContainer
+        center={[-15, -54]} zoom={3.6}
+        maxZoom={9} zoomSnap={0.1} zoomDelta={1}
+        maxBounds={[[-36, -78], [8, -30]]} maxBoundsViscosity={1}
+        style={{ position: "absolute", inset: 0, background: "transparent", borderRadius: 12 }}
+        attributionControl={false} scrollWheelZoom={false} doubleClickZoom={false}
+      >
+      <ZoomMinimo />
+      <ZoomComCtrl aoRolarSemCtrl={avisarSobreCtrl} />
       <AjustarVista bounds={bounds} />
       {!ufSel && geoBrMeso && (
         <GeoJSON key="br-meso" data={geoBrMeso} style={estiloMesoBr} onEachFeature={aoMesoBr} />
@@ -187,6 +249,8 @@ export default function Mapa({
         <GeoJSON key={`mun-${ufSel}-${mesoSel}-${Object.keys(casosMun).length}-${municipioSel?.cod_ibge || ""}`}
                  data={geoMun} style={estiloMun} onEachFeature={aoMun} />
       )}
-    </MapContainer>
+      </MapContainer>
+      {aviso && <div className="mapa-aviso">Use Ctrl + rolagem para aproximar</div>}
+    </div>
   );
 }
