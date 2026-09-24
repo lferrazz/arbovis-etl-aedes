@@ -56,7 +56,8 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const [modoComparar, setModoComparar] = useState(false);
   const [comparar, setComparar] = useState([]);
   const [comparacao, setComparacao] = useState(null);
-  const [metricaComp, setMetricaComp] = useState("por100mil");
+  const [panorama, setPanorama] = useState(null);
+  const [metricaComp, setMetricaComp] = useState("absoluto");
 
   const periodo = useMemo(() => ({ inicio: filtros.inicio, fim: filtros.fim }), [filtros.inicio, filtros.fim]);
   const params = useMemo(() => ({ doenca, uf: filtros.uf, ...periodo }), [doenca, filtros.uf, periodo]);
@@ -112,11 +113,19 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   // A seleção NÃO é limpa ao trocar de UF: navegar pelo mapa até outro estado
   // para achar uma cidade pequena faz parte do fluxo de comparar.
   // Lista completa para a busca, carregada só quando o modo comparar abre.
+  // Falha vira { erro } e não lista vazia: lista vazia fazia a busca dizer
+  // "Nenhuma cidade encontrada" quando, na verdade, a lista nem tinha carregado.
   const [todosMunicipios, setTodosMunicipios] = useState(null);
   useEffect(() => {
-    if (!modoComparar || todosMunicipios) return;
-    api("/municipios").then(setTodosMunicipios).catch(() => setTodosMunicipios([]));
-  }, [modoComparar, todosMunicipios]);
+    // Só depende de modoComparar: sair e entrar de novo no modo tenta outra vez,
+    // sem virar um loop de requisições quando a API está fora.
+    if (!modoComparar || (todosMunicipios && !todosMunicipios.erro)) return;
+    setTodosMunicipios(null);
+    api("/municipios")
+      .then(setTodosMunicipios)
+      .catch((e) => setTodosMunicipios({ erro: e.message }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modoComparar]);
 
   const codsComparar = comparar.map((c) => c.cod_ibge).join(",");
   useEffect(() => {
@@ -164,10 +173,18 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
 
   function abrirMunicipio(m) {
     setMunicipioSel(m);
-    // Limpa a lista anterior e ignora resposta atrasada de uma cidade já trocada —
-    // senão a tela rola até um card ainda mostrando as unidades da cidade anterior.
+    // Limpa o que era da cidade anterior e marca qual é o pedido atual: as duas
+    // respostas abaixo são ignoradas se o usuário já tiver trocado de cidade.
     setBairros([]);
+    setPanorama({ carregando: true });
     ultimoPedidoBairros.current = m.cod_ibge;
+
+    // Mesmo endpoint da comparação, com um município só: aproveita a população
+    // para mostrar taxa por habitante, e não apenas a contagem de casos.
+    api("/municipios/comparar", { cods: String(m.cod_ibge), ...periodo })
+      .then((d) => { if (ultimoPedidoBairros.current === m.cod_ibge) setPanorama({ dados: d[0] }); })
+      .catch((e) => { if (ultimoPedidoBairros.current === m.cod_ibge) setPanorama({ erro: e.message }); });
+
     api(`/bairros/${m.cod_ibge}`, { doenca, ...periodo })
       .then((d) => { if (ultimoPedidoBairros.current === m.cod_ibge) setBairros(d); })
       .catch(() => { if (ultimoPedidoBairros.current === m.cod_ibge) setBairros([]); });
@@ -228,7 +245,7 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
                     mesorregioes={mesorregioes} mesorregiaoSel={mesorregiaoSel} onSelectMeso={abrirMeso}
                     municipioSel={municipioSel} onSelectMunicipio={selecionarMunicipio} onSelectUf={selecionarUf}
                     cidadesMeso={cidadesMeso} listaMun={listaMun} busca={busca} setBusca={setBusca}
-                    bairros={bairros}
+                    bairros={bairros} panorama={panorama}
                     modoComparar={modoComparar} setModoComparar={setModoComparar}
                     comparar={comparar} onAlternarComparar={alternarComparar} todosMunicipios={todosMunicipios}
                     comparacao={comparacao} metricaComp={metricaComp} setMetricaComp={setMetricaComp}

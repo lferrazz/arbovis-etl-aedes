@@ -2,15 +2,16 @@ import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { useId } from "react";
 import { rotuloPeriodo, rotuloPeriodoLongo } from "../datas.js";
 import { Icone } from "./Icones.jsx";
 
 const fmt = new Intl.NumberFormat("pt-BR");
 export const n = (v) => fmt.format(v ?? 0);
 
-// Para taxas: mantém casas decimais e marca ausência como "—", nunca como 0.
+// Para taxas: mantém casas decimais e marca ausência como "sem dado", nunca como 0.
 export const nd = (v, casas = 1) =>
-  v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  v == null ? "sem dado" : v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 
 const EIXO = { fill: "#5c6773", fontSize: 12 };
 const GRADE = "#e8edf4";
@@ -22,21 +23,29 @@ const TOOLTIP = {
   boxShadow: "0 4px 12px rgba(20,30,50,.1)",
 };
 
-export function Kpi({ rotulo, valor, detalhe, cor, icone }) {
+// `ajuda` (opcional): explicação que aparece num balão ao passar o mouse ou ao
+// focar o card pelo teclado/toque, já que o `title` nativo não funciona no celular.
+export function Kpi({ rotulo, valor, detalhe, cor, icone, ajuda }) {
+  const idAjuda = useId();
   const completo = typeof valor === "number" ? n(valor) : valor;
   return (
-    <div className="kpi" style={{ "--kpi-cor": cor }}>
+    <div className={`kpi${ajuda ? " com-ajuda" : ""}`} style={{ "--kpi-cor": cor }}
+         tabIndex={ajuda ? 0 : undefined} aria-describedby={ajuda ? idAjuda : undefined}>
       <div className="ico"><Icone nome={icone} /></div>
       <div className="kpi-texto">
-        <div className="rotulo">{rotulo}</div>
-        <div className="valor" title={completo}>{completo}</div>
+        <div className="rotulo">
+          <span className="rotulo-texto">{rotulo}</span>
+          {ajuda && <span className="kpi-info" aria-hidden="true">i</span>}
+        </div>
+        <div className="valor">{completo}</div>
         {detalhe && <div className="kpi-detalhe">{detalhe}</div>}
       </div>
+      {ajuda && <div className="kpi-ajuda" role="tooltip" id={idAjuda}>{ajuda}</div>}
     </div>
   );
 }
 
-// Barras em HTML com o número sempre visível — bom para distribuições em que
+// Barras em HTML com o número sempre visível, bom para distribuições em que
 // categorias minúsculas (ex.: óbitos vs curas) sumiriam num gráfico em escala.
 export function BarrasValor({ dados, chaveX, chaveY, cor }) {
   const max = Math.max(1, ...dados.map((d) => d[chaveY] || 0));
@@ -95,10 +104,13 @@ export function GraficoLinhas({ dados, chaveX, series, formatador = n, dominioY 
 
 // `series` (opcional) desenha várias barras agrupadas; sem ela o comportamento é
 // exatamente o de antes, com uma barra só.
-export function GraficoBarras({ dados, chaveX, chaveY, cor, nome, horizontal, series, formatador = n }) {
+export function GraficoBarras({
+  dados, chaveX, chaveY, cor, nome, horizontal, series, formatador = n,
+  larguraRotulo = 158, alto = false,
+}) {
   const barras = series || [{ chave: chaveY, nome, cor }];
   return (
-    <div className="grafico">
+    <div className={`grafico${alto ? " alto" : ""}`}>
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={dados}
@@ -109,7 +121,7 @@ export function GraficoBarras({ dados, chaveX, chaveY, cor, nome, horizontal, se
         {horizontal ? (
           <>
             <XAxis type="number" tick={EIXO} tickFormatter={formatador} />
-            <YAxis type="category" dataKey={chaveX} tick={{ ...EIXO, fontSize: 11 }} width={158} />
+            <YAxis type="category" dataKey={chaveX} tick={{ ...EIXO, fontSize: 11 }} width={larguraRotulo} />
           </>
         ) : (
           <>

@@ -9,8 +9,10 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
   const [aberto, setAberto] = useState(false);
   const [ativo, setAtivo] = useState(0);
 
+  const falhou = Boolean(municipios?.erro);
   const indice = useMemo(
-    () => (municipios || []).map((m) => ({ ...m, nomeNorm: normalizar(m.municipio), ufNorm: m.uf.toLowerCase() })),
+    () => (Array.isArray(municipios) ? municipios : [])
+      .map((m) => ({ ...m, nomeNorm: normalizar(m.municipio), ufNorm: m.uf.toLowerCase() })),
     [municipios],
   );
 
@@ -18,16 +20,22 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
   const sugestoes = useMemo(() => {
     if (!termo) return [];
     const escolhidos = new Set(selecionados.map((c) => c.cod_ibge));
-    // Quem começa com o termo vem antes de quem só o contém.
-    const comeca = [];
-    const contem = [];
+    // Nome exato > começa com o termo > só contém; empate vai para o nome mais curto.
+    // Assim "jatai" traz Jataí antes de Jataizinho, e "rio verde go" traz Rio Verde
+    // antes de Carmo do Rio Verde. Aceita o termo com a UF no fim ("rio verde go").
+    const achados = [];
     for (const m of indice) {
       if (escolhidos.has(m.cod_ibge)) continue;
-      if (m.nomeNorm.startsWith(termo)) comeca.push(m);
-      else if (m.nomeNorm.includes(termo) || `${m.nomeNorm} ${m.ufNorm}`.includes(termo)) contem.push(m);
-      if (comeca.length >= MAX_SUGESTOES) break;
+      const comUf = `${m.nomeNorm} ${m.ufNorm}`;
+      let nota;
+      if (m.nomeNorm === termo || comUf === termo) nota = 0;
+      else if (m.nomeNorm.startsWith(termo) || comUf.startsWith(termo)) nota = 1;
+      else if (comUf.includes(termo)) nota = 2;
+      else continue;
+      achados.push([nota, m]);
     }
-    return [...comeca, ...contem].slice(0, MAX_SUGESTOES);
+    achados.sort((a, b) => a[0] - b[0] || a[1].nomeNorm.length - b[1].nomeNorm.length);
+    return achados.slice(0, MAX_SUGESTOES).map(([, m]) => m);
   }, [indice, termo, selecionados]);
 
   const indiceAtivo = Math.min(ativo, sugestoes.length - 1);
@@ -57,6 +65,7 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
   const carregando = municipios == null;
   const placeholder = carregando
     ? "Carregando municípios…"
+    : falhou ? "Não foi possível carregar a lista de cidades. Use o mapa ou a lista ao lado."
     : desabilitado ? "Limite de 4 cidades atingido" : "Buscar qualquer cidade do Brasil…";
 
   return (
@@ -65,7 +74,7 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
         className="busca" role="combobox" aria-label="Buscar cidade para comparar"
         aria-expanded={mostrarLista} aria-controls="busca-mun-lista" aria-autocomplete="list"
         aria-activedescendant={mostrarLista ? `busca-mun-${sugestoes[indiceAtivo].cod_ibge}` : undefined}
-        placeholder={placeholder} value={texto} disabled={carregando || desabilitado}
+        placeholder={placeholder} value={texto} disabled={carregando || falhou || desabilitado}
         onChange={(e) => { setTexto(e.target.value); setAtivo(0); setAberto(true); }}
         onFocus={() => setAberto(true)} onBlur={() => setAberto(false)} onKeyDown={aoTeclar}
       />
@@ -83,7 +92,7 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
           ))}
         </ul>
       )}
-      {aberto && termo && !carregando && sugestoes.length === 0 && (
+      {aberto && termo && !carregando && !falhou && sugestoes.length === 0 && (
         <div className="busca-mun-lista busca-mun-vazio">Nenhuma cidade encontrada</div>
       )}
     </div>

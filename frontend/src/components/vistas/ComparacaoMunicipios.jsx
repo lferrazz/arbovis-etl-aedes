@@ -64,10 +64,10 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
             {dados.map((m) => (
               <tr key={m.cod_ibge}>
                 <th scope="row">{m.municipio}/{m.uf}</th>
-                <td>{m.populacao == null ? "—" : n(m.populacao)}</td>
+                <td>{m.populacao == null ? "sem dado" : n(m.populacao)}</td>
                 <td>{n(m.casos)}</td>
                 <td className="destaque">{nd(m.casos_100mil)}</td>
-                <td>{m.pct_populacao == null ? "—" : `${nd(m.pct_populacao)}%`}</td>
+                <td>{m.pct_populacao == null ? "sem dado" : `${nd(m.pct_populacao)}%`}</td>
                 <td>{n(m.obitos)}</td>
                 <td>{nd(m.obitos_100mil)}</td>
                 <td>{nd(m.letalidade, 3)}%</td>
@@ -87,8 +87,8 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
 
       {temSemPopulacao && (
         <p className="dica" style={{ marginTop: 12 }}>
-          — Município sem população no Censo 2022 (criado depois do recenseamento);
-          as taxas por habitante não podem ser calculadas.
+          Município sem população no Censo 2022, por ter sido criado depois do recenseamento.
+          As taxas por habitante não podem ser calculadas nesse caso.
         </p>
       )}
     </div>

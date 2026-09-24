@@ -50,7 +50,7 @@ def get_municipios():
 
 @app.get("/municipios/comparar", dependencies=dep)
 def get_comparar_municipios(
-    cods: str = Query(..., description="2 a 4 códigos IBGE separados por vírgula"),
+    cods: str = Query(..., description="1 a 4 códigos IBGE separados por vírgula"),
     inicio: date | None = Inicio, fim: date | None = Fim,
 ):
     try:
@@ -58,8 +58,9 @@ def get_comparar_municipios(
         lista = tuple(dict.fromkeys(int(c) for c in cods.split(",") if c.strip()))
     except ValueError:
         raise HTTPException(status_code=400, detail="Códigos IBGE inválidos.")
-    if not 2 <= len(lista) <= 4:
-        raise HTTPException(status_code=400, detail="Informe de 2 a 4 códigos IBGE.")
+    # 1 código também vale: é o panorama de uma cidade só, ao clicar no mapa.
+    if not 1 <= len(lista) <= 4:
+        raise HTTPException(status_code=400, detail="Informe de 1 a 4 códigos IBGE.")
     return queries.comparar_municipios(lista, inicio, fim)
 
 

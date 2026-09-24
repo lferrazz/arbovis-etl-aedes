@@ -110,7 +110,7 @@ def serie_temporal(doenca=None, uf=None, inicio=None, fim=None, granularidade="m
 
 @_cacheado
 def limites_periodo():
-    """Primeira e última data com notificação — define o que o calendário deixa escolher."""
+    """Primeira e última data com notificação: define o que o calendário deixa escolher."""
     where, params = _filtros()
     linhas = _run(
         f"SELECT FORMAT_DATE('%Y-%m-%d', MIN(f.dt_notificacao)) AS inicio, "
@@ -358,7 +358,7 @@ def ranking_uf(doenca=None, inicio=None, fim=None, limite=10):
 # ── Qualidade dos dados ──
 # Um registro é aproveitável quando tem data de notificação E município: sem um
 # deles, ele fica de fora de todas as outras abas (que filtram por data e lugar),
-# mas continua contado aqui — nada é descartado.
+# mas continua contado aqui: só duplicatas idênticas são removidas pelo ETL.
 #
 # Respeita doença, UF e período como as outras abas, com duas ressalvas
 # inevitáveis que a tela explica:
@@ -477,7 +477,10 @@ def principais_sintomas(doenca=None, uf=None, inicio=None, fim=None):
     linha = _run(f"SELECT {selects} {BASE_JOIN} {where}", params)
     if not linha:
         return []
-    return [{"sintoma": k, "qtd": v} for k, v in linha[0].items()]
+    # Ordenado do mais para o menos relatado: sem isso o gráfico sai fora de ordem,
+    # com barras maiores embaixo das menores.
+    sintomas = [{"sintoma": k, "qtd": v or 0} for k, v in linha[0].items()]
+    return sorted(sintomas, key=lambda s: s["qtd"], reverse=True)
 
 
 @_cacheado

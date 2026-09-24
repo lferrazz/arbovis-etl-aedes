@@ -21,7 +21,7 @@ export const addDias = (iso, n) => paraIso(new Date(paraData(iso).getTime() + n 
 export const inicioMes = (iso) => `${iso.slice(0, 7)}-01`;
 export const diaDaSemana = (iso) => paraData(iso).getUTCDay();
 export const diasEntre = (a, b) => Math.round((paraData(b) - paraData(a)) / DIA_MS) + 1;
-export const fmtBR = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "—");
+export const fmtBR = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "sem data");
 
 export function mesSomado(iso, n) {
   const dt = paraData(iso);

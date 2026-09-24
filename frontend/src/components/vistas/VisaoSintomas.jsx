@@ -12,7 +12,10 @@ export default function VisaoSintomas({ cor, sintomas, tipos, tiposPct }) {
         <div className="card">
           <div className="card-topo"><h3>Onde os casos são atendidos</h3></div>
           <p className="dica">Tipos de estabelecimento (CNES) que mais notificaram.</p>
-          <GraficoBarras dados={tipos} chaveX="tipo" chaveY="casos" cor={cor} nome="Casos" horizontal />
+          {/* Rótulos longos ("Centro de Saúde/Unidade Básica de Saúde") quebram em duas
+              linhas e colidem com a categoria vizinha; daí mais largura e mais altura. */}
+          <GraficoBarras dados={tipos} chaveX="tipo" chaveY="casos" cor={cor} nome="Casos"
+                         horizontal larguraRotulo={210} alto />
         </div>
         <div className="card">
           <div className="card-topo"><h3>Concentração por tipo de unidade (CNES)</h3></div>

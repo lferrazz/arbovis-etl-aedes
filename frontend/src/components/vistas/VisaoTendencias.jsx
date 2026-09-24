@@ -26,7 +26,7 @@ export default function VisaoTendencias({ cor, serie, granularidade, setGranular
       <div className="grade2">
         <div className="card">
           <div className="card-topo"><h3>Sazonalidade</h3></div>
-          <p className="dica">Casos somados por mês do ano — o pico da temporada.</p>
+          <p className="dica">Casos somados por mês do ano, mostrando o pico da temporada.</p>
           <GraficoBarras dados={sazonal} chaveX="mes" chaveY="casos" cor={cor} nome="Casos" />
         </div>
         <div className="card">

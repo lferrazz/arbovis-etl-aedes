@@ -29,7 +29,7 @@ function AjustarVista({ bounds }) {
 }
 
 // O zoom mínimo fixo deixava afastar até o Brasil virar um ponto dentro do card.
-// Aqui o piso passa a ser o zoom em que o Brasil ainda cabe inteiro — recalculado
+// Aqui o piso passa a ser o zoom em que o Brasil ainda cabe inteiro, recalculado
 // quando o card muda de tamanho, já que depende da largura disponível.
 function ZoomMinimo() {
   const map = useMap();

@@ -15,7 +15,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-/* scrollIntoView com behavior:"auto" cai de volta para o valor do CSS — sem isto,
+/* scrollIntoView com behavior:"auto" cai de volta para o valor do CSS. Sem isto,
    quem pede "reduzir movimento" continuaria vendo a rolagem animada. */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
@@ -110,6 +110,45 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 }
 .kpi-detalhe { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 
+/* ---------- Balão de ajuda dos KPIs ---------- */
+.kpi.com-ajuda { position: relative; cursor: help; }
+/* O card com o balão aberto sobe na pilha, senão os cards da linha de baixo,
+   que vêm depois no DOM, são pintados por cima do balão. */
+.kpi.com-ajuda:hover, .kpi.com-ajuda:focus-visible { z-index: 30; }
+.kpi.com-ajuda:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kpi .rotulo { display: flex; align-items: center; gap: 5px; }
+.rotulo-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kpi-info {
+  flex-shrink: 0; display: inline-grid; place-items: center; width: 14px; height: 14px;
+  border-radius: 50%; border: 1.5px solid var(--faint); color: var(--faint);
+  font-size: 9px; font-weight: 800; font-style: italic; font-family: Georgia, serif; line-height: 1;
+}
+.kpi.com-ajuda:hover .kpi-info, .kpi.com-ajuda:focus-visible .kpi-info { border-color: var(--accent); color: var(--accent); }
+.kpi-ajuda {
+  position: absolute; left: 0; right: 0; top: calc(100% + 8px);
+  background: var(--text); color: #fff; font-size: 13px; font-weight: 500; line-height: 1.5;
+  padding: 12px 14px; border-radius: 12px; box-shadow: 0 10px 28px rgba(20, 30, 50, .22);
+  opacity: 0; visibility: hidden; transform: translateY(-4px); pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease, visibility .15s;
+}
+.kpi-ajuda::before {
+  content: ""; position: absolute; top: -6px; left: 30px; width: 12px; height: 12px;
+  background: var(--text); transform: rotate(45deg); border-radius: 2px;
+}
+.kpi.com-ajuda:hover .kpi-ajuda, .kpi.com-ajuda:focus-visible .kpi-ajuda {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) { .kpi-ajuda { transition: none; } }
+
+/* Grade sem card órfão: o número de colunas é sempre divisor da quantidade de
+   cards (6 → 6/3/2/1, 4 → 4/2/1). O auto-fit encaixava 5 e deixava o 6º sozinho. */
+.kpis-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kpis-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (min-width: 1800px) { .kpis-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 1250px) { .kpis-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .kpis-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .kpis-6, .kpis-4 { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------- Cards ---------- */
 .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 24px; box-shadow: var(--sombra); display: flex; flex-direction: column; }
 .grade2, .grade3 { align-items: stretch; }
@@ -144,6 +183,8 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 /* O gap do grid já espaça; sem isto a regra `.card + .card` descia a lista 20px. */
 .grade-mapa > .card + .card { margin-top: 0; }
 .grafico { flex: 1 1 auto; min-height: 300px; height: 300px; width: 100%; }
+/* Para gráficos com muitas categorias de rótulo longo. */
+.grafico.alto { min-height: 400px; height: 400px; }
 @media (max-width: 1200px) { .grade3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1000px) { .grade2, .grade3, .grade-mapa { grid-template-columns: 1fr; } }
 
@@ -305,8 +346,18 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .nota-ponte b { color: var(--text); }
 .secao-titulo { font-size: 18px; margin: 0 0 4px; }
 .secao-sub { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
-.kpis-compactos { grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 12px; }
+.kpis-compactos { gap: 12px; } /* colunas vêm do .kpis-6 */
 .kpis-compactos .kpi { padding: 16px; }
+
+/* ---------- Panorama da cidade ---------- */
+.panorama-doencas { display: flex; flex-wrap: wrap; gap: 10px; margin: -14px 0 24px; }
+.doenca-chip {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted);
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;
+}
+.doenca-chip i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.doenca-chip b { color: var(--text); font-variant-numeric: tabular-nums; }
+.doenca-chip em { font-style: normal; color: var(--faint); font-size: 12px; }
 
 /* ---------- Comparação de municípios ---------- */
 .comp-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

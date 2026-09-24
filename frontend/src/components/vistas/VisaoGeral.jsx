@@ -1,15 +1,15 @@
-import { BarrasValor, GraficoBarras, GraficoTemporal, Kpi, n } from "../Graficos.jsx";
+import { BarrasValor, GraficoBarras, GraficoTemporal, Kpi, n, nd } from "../Graficos.jsx";
 
 export default function VisaoGeral({ cor, resumo, serie, grau, mapa, sazonal, regiao, desfecho, ufSel }) {
   return (
     <>
-      <div className="kpis">
+      <div className="kpis kpis-6">
         <Kpi rotulo="Casos notificados" valor={resumo.casos} cor={cor} icone="casos" />
         <Kpi rotulo="Curas" valor={resumo.curas} cor="#10b981" icone="curas" />
         <Kpi rotulo="Óbitos" valor={resumo.obitos} cor="#ef4444" icone="obitos" />
-        <Kpi rotulo="Letalidade" valor={`${resumo.letalidade}%`} cor="#f59e0b" icone="letalidade" />
-        <Kpi rotulo="% confirmados" valor={`${resumo.pct_confirmados}%`} cor="#0ea5e9" icone="letalidade" />
-        <Kpi rotulo="Idade média" valor={resumo.idade_media ? `${resumo.idade_media} anos` : "—"} cor="#8b5cf6" icone="demografia" />
+        <Kpi rotulo="Letalidade" valor={`${nd(resumo.letalidade, 3)}%`} cor="#f59e0b" icone="letalidade" />
+        <Kpi rotulo="% confirmados" valor={`${nd(resumo.pct_confirmados)}%`} cor="#0ea5e9" icone="letalidade" />
+        <Kpi rotulo="Idade média" valor={resumo.idade_media ? `${resumo.idade_media} anos` : "sem dado"} cor="#8b5cf6" icone="demografia" />
       </div>
       <div className="grade-mapa">
         <div className="card">
