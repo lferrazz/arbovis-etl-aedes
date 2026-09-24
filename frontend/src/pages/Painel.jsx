@@ -8,6 +8,7 @@ import VisaoQualidade from "../components/vistas/VisaoQualidade.jsx";
 import VisaoSintomas from "../components/vistas/VisaoSintomas.jsx";
 import VisaoTendencias from "../components/vistas/VisaoTendencias.jsx";
 import { GRAOS, completarSerie, fmtBR, grauPermitido, grauSugerido } from "../datas.js";
+import { normalizar } from "../texto.js";
 
 const CORES = { dengue: "#ef4444", zika: "#a855f7", chikungunya: "#f59e0b" };
 
@@ -30,8 +31,9 @@ function tiposPct(tipos) {
 }
 
 function listaMunicipios(cidades, busca, temUf) {
+  const termo = normalizar(busca);
   return cidades
-    .filter((m) => !busca || m.municipio.toLowerCase().includes(busca.toLowerCase()))
+    .filter((m) => !termo || normalizar(m.municipio).includes(termo))
     .slice(0, temUf ? 400 : 15);
 }
 

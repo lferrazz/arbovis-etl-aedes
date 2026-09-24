@@ -29,6 +29,21 @@ _GRAOS = {
 
 _MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
+# CLASSI_FIN (classificação final) tem códigos PRÓPRIOS de cada agravo: os da
+# dengue não valem para as outras. Dengue usou 1 a 4 até 2016 (dengue clássico,
+# com complicações, febre hemorrágica e síndrome do choque) e passou a 10, 11 e 12
+# (dengue, com sinais de alarme e grave). Chikungunya usa 13 e Zika usa 1.
+_CONFIRMADOS = {
+    "dengue": (1, 2, 3, 4, 10, 11, 12),
+    "chikungunya": (13,),
+    "zika": (1,),
+}
+
+_EXPR_CONFIRMADO = " OR ".join(
+    f"(d.nome = '{doenca}' AND f.classificacao IN ({', '.join(map(str, codigos))}))"
+    for doenca, codigos in _CONFIRMADOS.items()
+)
+
 _SINTOMAS = {
     "Febre": "febre",
     "Mialgia": "mialgia",
@@ -243,7 +258,7 @@ def resumo(doenca=None, uf=None, inicio=None, fim=None):
                COUNTIF(f.categoria_sintomas = 'Assintomático') AS assintomaticos,
                COUNTIF(f.categoria_sintomas = 'Sem informação') AS sem_informacao,
                ROUND(AVG(f.idade)) AS idade_media,
-               COUNTIF(f.classificacao IN (10, 11, 12)) AS confirmados
+               COUNTIF({_EXPR_CONFIRMADO}) AS confirmados
         {BASE_JOIN} {where}
         """,
         params,

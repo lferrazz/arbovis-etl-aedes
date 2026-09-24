@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
+import { normalizar } from "../texto.js";
 
-// "jatai" precisa achar "Jataí": compara sem acento e sem maiúscula.
-const normalizar = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const MAX_SUGESTOES = 8;
 
 export default function BuscaMunicipio({ municipios, selecionados, onEscolher, desabilitado }) {
