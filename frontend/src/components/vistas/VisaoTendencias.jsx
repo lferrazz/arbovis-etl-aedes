@@ -1,12 +1,15 @@
 import { GRAOS, LIMITE_TEXTO } from "../../datas.js";
-import { GraficoBarras, GraficoTemporal } from "../Graficos.jsx";
+import { AlternadorMetrica, GraficoBarras, GraficoTemporal, n, taxa } from "../Graficos.jsx";
 
-export default function VisaoTendencias({ cor, serie, granularidade, setGranularidade, permitidos, sazonal, rankingUf }) {
+export default function VisaoTendencias({
+  cor, serie, granularidade, setGranularidade, permitidos, sazonal, rankingUf, metrica, setMetrica,
+}) {
+  const porIncidencia = metrica === "incidencia";
   return (
     <>
       <div className="card">
         <div className="card-topo">
-          <h3>Evolução dos casos e óbitos</h3>
+          <h3>Evolução das notificações e dos óbitos</h3>
           <div className="segmentador">
             {GRAOS.map(([g, rot]) => (
               <button
@@ -26,13 +29,21 @@ export default function VisaoTendencias({ cor, serie, granularidade, setGranular
       <div className="grade2">
         <div className="card">
           <div className="card-topo"><h3>Sazonalidade</h3></div>
-          <p className="dica">Casos somados por mês do ano, mostrando o pico da temporada.</p>
-          <GraficoBarras dados={sazonal} chaveX="mes" chaveY="casos" cor={cor} nome="Casos" />
+          <p className="dica">Notificações somadas por mês do ano, mostrando o pico da temporada.</p>
+          <GraficoBarras dados={sazonal} chaveX="mes" chaveY="casos" cor={cor} nome="Notificações" />
         </div>
         <div className="card">
-          <div className="card-topo"><h3>Estados mais afetados</h3></div>
-          <p className="dica">Top 10 UFs no período.</p>
-          <GraficoBarras dados={rankingUf} chaveX="uf" chaveY="casos" cor={cor} nome="Casos" horizontal />
+          <div className="card-topo">
+            <h3>Estados mais afetados</h3>
+            <AlternadorMetrica metrica={metrica} setMetrica={setMetrica} />
+          </div>
+          <p className="dica">
+            Top 10 UFs no período{porIncidencia ? ", em casos confirmados por 100 mil habitantes." : ", em notificações."}
+          </p>
+          <GraficoBarras dados={rankingUf} chaveX="uf" horizontal cor={cor}
+                         chaveY={porIncidencia ? "incidencia" : "casos"}
+                         nome={porIncidencia ? "Confirmados por 100 mil hab." : "Notificações"}
+                         formatador={porIncidencia ? (v) => taxa(v) : n} />
         </div>
       </div>
     </>

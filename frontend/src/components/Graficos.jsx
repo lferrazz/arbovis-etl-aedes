@@ -13,6 +13,30 @@ export const n = (v) => fmt.format(v ?? 0);
 export const nd = (v, casas = 1) =>
   v == null ? "sem dado" : v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 
+// Taxa que o backend não calcula (município com menos de 100 mil hab., ou sem
+// confirmado para a letalidade) chega como null e aparece como travessão.
+export const taxa = (v, casas = 1) => (v == null ? "—" : nd(v, casas));
+
+export const POP_MIN_INCIDENCIA = 100_000;
+export const AJUDA_INCIDENCIA =
+  "Casos confirmados por 100 mil habitantes (Censo 2022), acumulados no período. Só é calculada "
+  + "para municípios com 100 mil habitantes ou mais: em cidade pequena, poucos casos fazem a taxa disparar.";
+
+// Número mostrado em listas e mapa conforme a métrica escolhida.
+export const valorMetrica = (item, metrica) =>
+  (metrica === "incidencia" ? taxa(item.incidencia) : n(item.casos));
+
+export function AlternadorMetrica({ metrica, setMetrica }) {
+  return (
+    <div className="segmentador" role="group" aria-label="Métrica">
+      <button className={metrica === "casos" ? "ativo" : ""} aria-pressed={metrica === "casos"}
+              onClick={() => setMetrica("casos")}>Notificações</button>
+      <button className={metrica === "incidencia" ? "ativo" : ""} aria-pressed={metrica === "incidencia"}
+              onClick={() => setMetrica("incidencia")} title={AJUDA_INCIDENCIA}>Incidência</button>
+    </div>
+  );
+}
+
 const EIXO = { fill: "#5c6773", fontSize: 12 };
 const GRADE = "#e8edf4";
 const TOOLTIP = {
@@ -64,18 +88,31 @@ export function BarrasValor({ dados, chaveX, chaveY, cor }) {
   );
 }
 
+const COR_OBITOS = "#ef4444";
+
+// Notificações no eixo esquerdo e óbitos no direito: num eixo só, milhões de
+// notificações achatavam os óbitos no zero. Cada eixo tem a cor e o nome da sua
+// linha, para ninguém ler um valor na escala errada. Linha reta (linear): a
+// suavizada inventava valores entre os pontos, o que num dado anual sugere
+// meses que não existem.
 export function GraficoTemporal({ dados, cor, grau = "mes" }) {
+  const pontos = grau === "ano" ? { r: 3 } : false;
   return (
     <div className="grafico">
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={dados} margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+      <LineChart data={dados} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
         <CartesianGrid stroke={GRADE} strokeDasharray="3 3" />
         <XAxis dataKey="periodo" tick={EIXO} minTickGap={40} tickFormatter={(p) => rotuloPeriodo(p, grau)} />
-        <YAxis tick={EIXO} width={64} tickFormatter={n} />
+        <YAxis yAxisId="notif" tick={EIXO} width={72} tickFormatter={n}
+               label={{ value: "Notificações", angle: -90, position: "insideLeft", fill: EIXO.fill, fontSize: 12, dy: 40 }} />
+        <YAxis yAxisId="obitos" orientation="right" tick={EIXO} width={64} tickFormatter={n}
+               label={{ value: "Óbitos", angle: 90, position: "insideRight", fill: EIXO.fill, fontSize: 12, dy: -20 }} />
         <Tooltip contentStyle={TOOLTIP} formatter={(v) => n(v)} labelFormatter={(p) => rotuloPeriodoLongo(p, grau)} />
         <Legend />
-        <Line type="monotone" dataKey="casos" name="Casos" stroke={cor} strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="mortes" name="Mortes" stroke="#f43f5e" strokeWidth={2} dot={false} />
+        <Line yAxisId="notif" type="linear" dataKey="casos" name="Notificações"
+              stroke={cor} strokeWidth={2} dot={pontos} />
+        <Line yAxisId="obitos" type="linear" dataKey="mortes" name="Óbitos pelo agravo"
+              stroke={COR_OBITOS} strokeWidth={2} dot={pontos} />
       </LineChart>
     </ResponsiveContainer>
     </div>
@@ -93,7 +130,7 @@ export function GraficoLinhas({ dados, chaveX, series, formatador = n, dominioY 
         <Tooltip contentStyle={TOOLTIP} formatter={(v) => formatador(v)} />
         <Legend />
         {series.map((s) => (
-          <Line key={s.chave} type="monotone" dataKey={s.chave} name={s.nome}
+          <Line key={s.chave} type="linear" dataKey={s.chave} name={s.nome}
                 stroke={s.cor} strokeWidth={2} dot={{ r: 2.5 }} />
         ))}
       </LineChart>
@@ -103,10 +140,11 @@ export function GraficoLinhas({ dados, chaveX, series, formatador = n, dominioY 
 }
 
 // `series` (opcional) desenha várias barras agrupadas; sem ela o comportamento é
-// exatamente o de antes, com uma barra só.
+// exatamente o de antes, com uma barra só. `formatadorTooltip(valor, linha)`
+// (opcional) deixa o balão mostrar mais que o eixo, como "72% (5 de 7)".
 export function GraficoBarras({
   dados, chaveX, chaveY, cor, nome, horizontal, series, formatador = n,
-  larguraRotulo = 158, alto = false,
+  larguraRotulo = 158, alto = false, formatadorTooltip,
 }) {
   const barras = series || [{ chave: chaveY, nome, cor }];
   return (
@@ -129,7 +167,8 @@ export function GraficoBarras({
             <YAxis tick={EIXO} width={64} tickFormatter={formatador} />
           </>
         )}
-        <Tooltip contentStyle={TOOLTIP} formatter={(v) => formatador(v)} cursor={{ fill: "#f1f4f9" }} />
+        <Tooltip contentStyle={TOOLTIP} cursor={{ fill: "#f1f4f9" }}
+                 formatter={(v, _nome, item) => (formatadorTooltip ? formatadorTooltip(v, item?.payload) : formatador(v))} />
         {series && <Legend />}
         {barras.map((b) => <Bar key={b.chave} dataKey={b.chave} name={b.nome} fill={b.cor} radius={4} />)}
       </BarChart>

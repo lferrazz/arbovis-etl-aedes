@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,8 +69,9 @@ def get_comparar_municipios(
 def get_mapa(doenca: str | None = Doenca, uf: str | None = Uf,
              inicio: date | None = Inicio, fim: date | None = Fim,
              limite: int = Query(5570, ge=1, le=5570),
-             mesorregiao: str | None = Query(None)):
-    return queries.mapa(doenca, uf, inicio, fim, mesorregiao, limite)
+             mesorregiao: str | None = Query(None),
+             ordem: Literal["casos", "incidencia"] = Query("casos")):
+    return queries.mapa(doenca, uf, inicio, fim, mesorregiao, limite, ordem)
 
 
 @app.get("/casos/por-mesorregiao", dependencies=dep)

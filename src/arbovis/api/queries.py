@@ -30,7 +30,7 @@ _GRAOS = {
 _MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
 # CLASSI_FIN (classificação final) tem códigos PRÓPRIOS de cada agravo: os da
-# dengue não valem para as outras. Dengue usou 1 a 4 até 2016 (dengue clássico,
+# dengue não valem para as outras. Dengue usou 1 a 4 até 2014 (dengue clássico,
 # com complicações, febre hemorrágica e síndrome do choque) e passou a 10, 11 e 12
 # (dengue, com sinais de alarme e grave). Chikungunya usa 13 e Zika usa 1.
 _CONFIRMADOS = {
@@ -43,6 +43,16 @@ _EXPR_CONFIRMADO = " OR ".join(
     f"(d.nome = '{doenca}' AND f.classificacao IN ({', '.join(map(str, codigos))}))"
     for doenca, codigos in _CONFIRMADOS.items()
 )
+
+# Tudo que não é um desfecho conhecido: vazio, 9 (ignorado) e códigos inválidos
+# (há ~21 mil registros com evolucao = 0, código que o SINAN não define).
+# Qualidade e Desfecho usam a mesma regra, senão os dois "ignorados" não batem.
+_EXPR_EVOLUCAO_IGNORADA = "(f.evolucao IS NULL OR f.evolucao NOT IN (1, 2, 3, 4))"
+
+# Incidência é confirmados por 100 mil habitantes. Em município pequeno, poucos
+# casos a mais ou a menos fazem a taxa disparar; abaixo deste corte ela não é
+# calculada. Mesorregião, UF e região sempre passam do corte.
+POP_MIN_INCIDENCIA = 100_000
 
 _SINTOMAS = {
     "Febre": "febre",
@@ -143,6 +153,18 @@ def _por_100mil(quantidade, populacao):
     return round(quantidade / populacao * 100_000, 1) if populacao else None
 
 
+def _incidencia(confirmados, populacao):
+    """Confirmados por 100 mil hab.; None abaixo de POP_MIN_INCIDENCIA."""
+    if not populacao or populacao < POP_MIN_INCIDENCIA:
+        return None
+    return _por_100mil(confirmados, populacao)
+
+
+def _letalidade(obitos, confirmados):
+    """Óbitos pelo agravo sobre confirmados, o denominador usual em epidemiologia."""
+    return round(obitos / confirmados * 100, 3) if confirmados else None
+
+
 def _montar_comparacao(cods, linhas):
     por_municipio: dict[int, dict] = {}
     for linha in linhas:
@@ -153,16 +175,19 @@ def _montar_comparacao(cods, linhas):
             "uf": linha["uf"],
             "populacao": int(linha["populacao"]) if linha["populacao"] is not None else None,
             "casos": 0,
+            "confirmados": 0,
             "obitos": 0,
-            "por_doenca": {d: {"casos": 0, "mortes": 0} for d in DOENCAS_COMPARACAO},
+            "por_doenca": {d: {"casos": 0, "confirmados": 0, "mortes": 0} for d in DOENCAS_COMPARACAO},
         })
         casos = int(linha["casos"] or 0)
+        confirmados = int(linha["confirmados"] or 0)
         mortes = int(linha["mortes"] or 0)
         municipio["casos"] += casos
+        municipio["confirmados"] += confirmados
         municipio["obitos"] += mortes
         nome = (linha["doenca"] or "").lower()
         if nome in municipio["por_doenca"]:
-            municipio["por_doenca"][nome] = {"casos": casos, "mortes": mortes}
+            municipio["por_doenca"][nome] = {"casos": casos, "confirmados": confirmados, "mortes": mortes}
 
     saida = []
     for cod in cods:  # preserva a ordem em que o usuário escolheu
@@ -171,12 +196,12 @@ def _montar_comparacao(cods, linhas):
             continue
         populacao = municipio["populacao"]
         casos = municipio["casos"]
-        municipio["letalidade"] = round(municipio["obitos"] / casos * 100, 3) if casos else 0.0
-        municipio["casos_100mil"] = _por_100mil(casos, populacao)
+        municipio["letalidade"] = _letalidade(municipio["obitos"], municipio["confirmados"])
+        municipio["incidencia"] = _incidencia(municipio["confirmados"], populacao)
         municipio["obitos_100mil"] = _por_100mil(municipio["obitos"], populacao)
         municipio["pct_populacao"] = round(casos / populacao * 100, 1) if populacao else None
         for dados in municipio["por_doenca"].values():
-            dados["casos_100mil"] = _por_100mil(dados["casos"], populacao)
+            dados["incidencia"] = _incidencia(dados["confirmados"], populacao)
         saida.append(municipio)
     return saida
 
@@ -211,7 +236,8 @@ def comparar_municipios(cods: tuple[int, ...], inicio=None, fim=None):
             FROM {DIM_MUNICIPIO} WHERE cod_ibge IN UNNEST(@cods)
         ),
         fatos AS (
-            SELECT f.cod_ibge, d.nome AS doenca, COUNT(*) AS casos, SUM(f.obito) AS mortes
+            SELECT f.cod_ibge, d.nome AS doenca, COUNT(*) AS casos,
+                   COUNTIF({_EXPR_CONFIRMADO}) AS confirmados, SUM(f.obito) AS mortes
             FROM {FATO} f
             JOIN {DIM_DOENCA} d ON f.id_doenca = d.id_doenca
             {where}
@@ -220,7 +246,8 @@ def comparar_municipios(cods: tuple[int, ...], inicio=None, fim=None):
         -- LEFT JOIN: município sem nenhum caso no período continua aparecendo na
         -- comparação, em vez de sumir e parecer erro da tela.
         SELECT a.cod_ibge, a.nome_municipio AS municipio, a.uf, a.populacao,
-               fa.doenca, IFNULL(fa.casos, 0) AS casos, IFNULL(fa.mortes, 0) AS mortes
+               fa.doenca, IFNULL(fa.casos, 0) AS casos,
+               IFNULL(fa.confirmados, 0) AS confirmados, IFNULL(fa.mortes, 0) AS mortes
         FROM alvo a
         LEFT JOIN fatos fa ON fa.cod_ibge = a.cod_ibge
         ORDER BY a.cod_ibge, fa.doenca
@@ -230,18 +257,40 @@ def comparar_municipios(cods: tuple[int, ...], inicio=None, fim=None):
     return _montar_comparacao(cods, linhas)
 
 
+# Sobre uma subconsulta que já tem `confirmados` e `populacao`.
+_SQL_INCIDENCIA = (
+    f"IF(populacao >= {POP_MIN_INCIDENCIA}, "
+    "ROUND(SAFE_DIVIDE(confirmados, populacao) * 100000, 1), NULL)"
+)
+
+
+def _populacao_por(coluna):
+    """População de TODOS os municípios do grupo, e não só dos que tiveram
+    notificação no período: senão a cidade sem caso some do denominador."""
+    return f"SELECT {coluna}, SUM(populacao) AS populacao FROM {DIM_MUNICIPIO} GROUP BY {coluna}"
+
+
 @_cacheado
-def mapa(doenca=None, uf=None, inicio=None, fim=None, mesorregiao=None, limite=5570):
+def mapa(doenca=None, uf=None, inicio=None, fim=None, mesorregiao=None, limite=5570, ordem="casos"):
     where, params = _filtros(doenca=doenca, uf=uf, inicio=inicio, fim=fim, mesorregiao=mesorregiao)
     params.append(bigquery.ScalarQueryParameter("limite", "INT64", limite))
+    # Por incidência, o ranking só tem cidades onde a taxa é calculada.
+    por_incidencia = ordem == "incidencia"
+    filtro_pop = f"WHERE populacao >= {POP_MIN_INCIDENCIA}" if por_incidencia else ""
+    ordenacao = "incidencia DESC, casos DESC" if por_incidencia else "casos DESC"
     return _run(
         f"""
-        SELECT m.cod_ibge, m.nome_municipio AS municipio, m.uf,
-               COUNT(*) AS casos, SUM(f.obito) AS mortes
-        {BASE_JOIN} {where}
-        AND m.cod_ibge IS NOT NULL
-        GROUP BY m.cod_ibge, m.nome_municipio, m.uf
-        ORDER BY casos DESC LIMIT @limite
+        SELECT *, {_SQL_INCIDENCIA} AS incidencia
+        FROM (
+            SELECT m.cod_ibge, m.nome_municipio AS municipio, m.uf, m.populacao,
+                   COUNT(*) AS casos, COUNTIF({_EXPR_CONFIRMADO}) AS confirmados,
+                   SUM(f.obito) AS mortes
+            {BASE_JOIN} {where}
+            AND m.cod_ibge IS NOT NULL
+            GROUP BY m.cod_ibge, m.nome_municipio, m.uf, m.populacao
+        )
+        {filtro_pop}
+        ORDER BY {ordenacao} LIMIT @limite
         """,
         params,
     )
@@ -254,7 +303,9 @@ def resumo(doenca=None, uf=None, inicio=None, fim=None):
         f"""
         SELECT COUNT(*) AS casos,
                SUM(f.obito) AS obitos,
-               COUNTIF(f.evolucao = 1) AS curas,
+               -- Só entre confirmados: a notificação descartada também "cura",
+               -- e contá-la deixava curas acima de confirmados.
+               COUNTIF(f.evolucao = 1 AND ({_EXPR_CONFIRMADO})) AS curas,
                COUNTIF(f.categoria_sintomas = 'Assintomático') AS assintomaticos,
                COUNTIF(f.categoria_sintomas = 'Sem informação') AS sem_informacao,
                ROUND(AVG(f.idade)) AS idade_media,
@@ -266,7 +317,7 @@ def resumo(doenca=None, uf=None, inicio=None, fim=None):
     casos = linha.get("casos") or 0
     obitos = linha.get("obitos") or 0
     confirmados = linha.get("confirmados") or 0
-    linha["letalidade"] = round(obitos / casos * 100, 3) if casos else 0.0
+    linha["letalidade"] = _letalidade(obitos, confirmados)
     linha["pct_confirmados"] = round(confirmados / casos * 100, 1) if casos else 0.0
     return linha
 
@@ -312,7 +363,17 @@ def sazonalidade(doenca=None, uf=None, inicio=None, fim=None):
 def por_regiao(doenca=None, uf=None, inicio=None, fim=None):
     where, params = _filtros(doenca=doenca, uf=uf, inicio=inicio, fim=fim)
     return _run(
-        f"SELECT m.regiao AS regiao, COUNT(*) AS casos {BASE_JOIN} {where} AND m.regiao IS NOT NULL GROUP BY regiao ORDER BY casos DESC",
+        f"""
+        WITH pop AS ({_populacao_por("regiao")}),
+        fatos AS (
+            SELECT m.regiao, COUNT(*) AS casos, COUNTIF({_EXPR_CONFIRMADO}) AS confirmados
+            {BASE_JOIN} {where} AND m.regiao IS NOT NULL
+            GROUP BY m.regiao
+        )
+        SELECT *, {_SQL_INCIDENCIA} AS incidencia
+        FROM (SELECT fa.*, p.populacao FROM fatos fa LEFT JOIN pop p USING (regiao))
+        ORDER BY casos DESC
+        """,
         params,
     )
 
@@ -326,11 +387,12 @@ def desfecho(doenca=None, uf=None, inicio=None, fim=None):
                  WHEN 1 THEN 'Cura'
                  WHEN 2 THEN 'Óbito pelo agravo'
                  WHEN 3 THEN 'Óbito por outras causas'
-                 WHEN 4 THEN 'Em investigação'
-                 ELSE 'Ignorado / sem informação'
+                 WHEN 4 THEN 'Óbito em investigação'  -- dicionário SINAN de dengue/chik
+                 ELSE 'Ignorado / sem informação'  -- = _EXPR_EVOLUCAO_IGNORADA
                END AS desfecho,
                COUNT(*) AS casos
         {BASE_JOIN} {where}
+        AND ({_EXPR_CONFIRMADO})
         GROUP BY desfecho ORDER BY casos DESC
         """,
         params,
@@ -342,10 +404,17 @@ def por_mesorregiao(doenca=None, uf=None, inicio=None, fim=None):
     where, params = _filtros(doenca=doenca, uf=uf, inicio=inicio, fim=fim)
     return _run(
         f"""
-        SELECT m.mesorregiao, m.uf, COUNT(*) AS casos, SUM(f.obito) AS mortes
-        {BASE_JOIN} {where}
-        AND m.mesorregiao IS NOT NULL
-        GROUP BY m.mesorregiao, m.uf ORDER BY casos DESC
+        WITH pop AS ({_populacao_por("mesorregiao, uf")}),
+        fatos AS (
+            SELECT m.mesorregiao, m.uf, COUNT(*) AS casos,
+                   COUNTIF({_EXPR_CONFIRMADO}) AS confirmados, SUM(f.obito) AS mortes
+            {BASE_JOIN} {where}
+            AND m.mesorregiao IS NOT NULL
+            GROUP BY m.mesorregiao, m.uf
+        )
+        SELECT *, {_SQL_INCIDENCIA} AS incidencia
+        FROM (SELECT fa.*, p.populacao FROM fatos fa LEFT JOIN pop p USING (mesorregiao, uf))
+        ORDER BY casos DESC
         """,
         params,
     )
@@ -355,7 +424,17 @@ def por_mesorregiao(doenca=None, uf=None, inicio=None, fim=None):
 def por_uf(doenca=None, inicio=None, fim=None):
     where, params = _filtros(doenca=doenca, inicio=inicio, fim=fim)
     return _run(
-        f"SELECT m.uf, COUNT(*) AS casos, SUM(f.obito) AS mortes {BASE_JOIN} {where} AND m.uf IS NOT NULL GROUP BY m.uf",
+        f"""
+        WITH pop AS ({_populacao_por("uf")}),
+        fatos AS (
+            SELECT m.uf, COUNT(*) AS casos, COUNTIF({_EXPR_CONFIRMADO}) AS confirmados,
+                   SUM(f.obito) AS mortes
+            {BASE_JOIN} {where} AND m.uf IS NOT NULL
+            GROUP BY m.uf
+        )
+        SELECT *, {_SQL_INCIDENCIA} AS incidencia
+        FROM (SELECT fa.*, p.populacao FROM fatos fa LEFT JOIN pop p USING (uf))
+        """,
         params,
     )
 
@@ -383,7 +462,7 @@ def ranking_uf(doenca=None, inicio=None, fim=None, limite=10):
 # Campo incompleto → condição de "faltando". Evolução 9 = ignorado no SINAN.
 _CAMPOS_INCOMPLETOS = {
     "sem_sintomas": "f.categoria_sintomas = 'Sem informação'",
-    "evolucao_ignorada": "(f.evolucao IS NULL OR f.evolucao = 9)",
+    "evolucao_ignorada": _EXPR_EVOLUCAO_IGNORADA,
     "classificacao_vazia": "f.classificacao IS NULL",
     "unidade_vazia": "f.co_cnes IS NULL",
     "sexo_ignorado": "(f.sexo IS NULL OR f.sexo NOT IN ('M', 'F'))",
@@ -488,14 +567,27 @@ def qualidade(doenca=None, uf=None, inicio=None, fim=None):
 @_cacheado
 def principais_sintomas(doenca=None, uf=None, inicio=None, fim=None):
     where, params = _filtros(doenca=doenca, uf=uf, inicio=inicio, fim=fim)
-    selects = ", ".join(f"COUNTIF(f.{col} = 1) AS `{rotulo}`" for rotulo, col in _SINTOMAS.items())
+    # A base de cada sintoma é quem tem o campo preenchido: a ficha de dengue de
+    # 2007 a 2014 e a de Zika não têm esses campos, e contá-las como "não teve
+    # o sintoma" compararia coisas diferentes.
+    selects = ", ".join(
+        f"COUNTIF(f.{col} = 1) AS {col}_qtd, COUNTIF(f.{col} IS NOT NULL) AS {col}_base"
+        for col in _SINTOMAS.values()
+    )
     linha = _run(f"SELECT {selects} {BASE_JOIN} {where}", params)
     if not linha:
         return []
+    sintomas = []
+    for rotulo, col in _SINTOMAS.items():
+        qtd = linha[0][f"{col}_qtd"] or 0
+        base = linha[0][f"{col}_base"] or 0
+        sintomas.append({
+            "sintoma": rotulo, "qtd": qtd, "base": base,
+            "pct": round(qtd / base * 100, 1) if base else None,
+        })
     # Ordenado do mais para o menos relatado: sem isso o gráfico sai fora de ordem,
     # com barras maiores embaixo das menores.
-    sintomas = [{"sintoma": k, "qtd": v or 0} for k, v in linha[0].items()]
-    return sorted(sintomas, key=lambda s: s["qtd"], reverse=True)
+    return sorted(sintomas, key=lambda s: s["pct"] or 0, reverse=True)
 
 
 @_cacheado

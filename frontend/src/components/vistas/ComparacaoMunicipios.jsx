@@ -1,7 +1,7 @@
-import { GraficoBarras, n, nd } from "../Graficos.jsx";
+import { AlternadorMetrica, GraficoBarras, POP_MIN_INCIDENCIA, n, nd, taxa } from "../Graficos.jsx";
 
 const SERIES = [
-  { chave: "dengue", nome: "Dengue", cor: "#ef4444" },
+  { chave: "dengue", nome: "Dengue", cor: "#2563eb" },
   { chave: "zika", nome: "Zika", cor: "#a855f7" },
   { chave: "chikungunya", nome: "Chikungunya", cor: "#f59e0b" },
 ];
@@ -16,14 +16,15 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
   }
 
   const dados = estado.dados || [];
-  const por100mil = metrica === "por100mil";
+  const porIncidencia = metrica === "incidencia";
   const temSemPopulacao = dados.some((m) => m.populacao == null);
+  const temPequeno = dados.some((m) => m.populacao != null && m.populacao < POP_MIN_INCIDENCIA);
 
   const dadosGrafico = dados.map((m) => ({
     municipio: m.municipio,
     ...Object.fromEntries(SERIES.map(({ chave }) => [
       chave,
-      por100mil ? m.por_doenca[chave].casos_100mil : m.por_doenca[chave].casos,
+      porIncidencia ? m.por_doenca[chave].incidencia : m.por_doenca[chave].casos,
     ])),
   }));
 
@@ -32,17 +33,14 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
       <div className="card-topo">
         <h3>Comparação entre municípios</h3>
         <div className="comp-acoes">
-          <div className="segmentador">
-            <button className={!por100mil ? "ativo" : ""} onClick={() => setMetrica("absoluto")}>Absolutos</button>
-            <button className={por100mil ? "ativo" : ""} onClick={() => setMetrica("por100mil")}>Por 100 mil hab.</button>
-          </div>
+          <AlternadorMetrica metrica={metrica} setMetrica={setMetrica} />
           <button className="voltar" onClick={onLimpar}>Limpar</button>
         </div>
       </div>
       <p className="dica">
-        O número absoluto esconde o tamanho da cidade. A taxa por 100 mil habitantes mostra o peso
-        real da doença sobre a população. Usa o período selecionado e considera as três doenças,
-        independente da aba escolhida. População do Censo 2022 (IBGE).
+        O número absoluto esconde o tamanho da cidade. A incidência (casos confirmados por 100 mil
+        habitantes) mostra o peso real da doença sobre a população. Usa o período selecionado e
+        considera as três doenças, independente da aba escolhida. População do Censo 2022 (IBGE).
       </p>
 
       <div className="tabela-rolavel">
@@ -51,12 +49,13 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
             <tr>
               <th>Município</th>
               <th>População</th>
-              <th>Casos</th>
-              <th>Casos / 100 mil</th>
-              <th>% da população</th>
+              <th>Notificações</th>
+              <th>Confirmados</th>
+              <th>Incidência (conf. / 100 mil)</th>
+              <th>% da população notificada</th>
               <th>Óbitos</th>
               <th>Óbitos / 100 mil</th>
-              <th>Letalidade</th>
+              <th>Letalidade (sobre confirmados)</th>
               {SERIES.map((s) => <th key={s.chave}>{s.nome}</th>)}
             </tr>
           </thead>
@@ -66,14 +65,15 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
                 <th scope="row">{m.municipio}/{m.uf}</th>
                 <td>{m.populacao == null ? "sem dado" : n(m.populacao)}</td>
                 <td>{n(m.casos)}</td>
-                <td className="destaque">{nd(m.casos_100mil)}</td>
+                <td>{n(m.confirmados)}</td>
+                <td className="destaque">{taxa(m.incidencia)}</td>
                 <td>{m.pct_populacao == null ? "sem dado" : `${nd(m.pct_populacao)}%`}</td>
                 <td>{n(m.obitos)}</td>
                 <td>{nd(m.obitos_100mil)}</td>
-                <td>{nd(m.letalidade, 3)}%</td>
+                <td>{m.letalidade == null ? "—" : `${nd(m.letalidade, 3)}%`}</td>
                 {SERIES.map((s) => (
                   <td key={s.chave}>
-                    {por100mil ? nd(m.por_doenca[s.chave].casos_100mil) : n(m.por_doenca[s.chave].casos)}
+                    {porIncidencia ? taxa(m.por_doenca[s.chave].incidencia) : n(m.por_doenca[s.chave].casos)}
                   </td>
                 ))}
               </tr>
@@ -83,8 +83,14 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
       </div>
 
       <GraficoBarras dados={dadosGrafico} chaveX="municipio" series={SERIES}
-                     formatador={por100mil ? (v) => nd(v) : n} />
+                     formatador={porIncidencia ? (v) => taxa(v) : n} />
 
+      {temPequeno && (
+        <p className="dica" style={{ marginTop: 12 }}>
+          A incidência só é calculada para municípios com 100 mil habitantes ou mais (—): abaixo
+          disso, poucos casos a mais ou a menos fazem a taxa oscilar muito.
+        </p>
+      )}
       {temSemPopulacao && (
         <p className="dica" style={{ marginTop: 12 }}>
           Município sem população no Censo 2022, por ter sido criado depois do recenseamento.

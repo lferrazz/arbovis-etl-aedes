@@ -12,9 +12,6 @@ from arbovis.extract.alias import resolver_alias
 
 GRUPOS_SINAN = {"dengue": "DENG", "zika": "ZIKA", "chikungunya": "CHIK"}
 
-# O catálogo lista o mesmo ano em dois caminhos: 'ftp' e 'dadosgov'. Desde a
-# reorganização do bucket (ago/2026) o 'dadosgov' responde 403, então tenta-se
-# primeiro o 'ftp' e só depois os demais.
 _SCRIPT_DOWNLOAD = (
     "import sys, asyncio\n"
     "from pysus.api import PySUSClient\n"

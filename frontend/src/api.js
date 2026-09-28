@@ -40,14 +40,28 @@ const mesoNomesUfUrl = (cod) =>
 
 async function buscarJson(url) {
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`Erro ${res.status} em ${url}`);
   return res.json();
 }
 
-export const buscarMalhaBrMeso = () => buscarJson(MALHA_BR_MESO);
-export const buscarNomesMesoBr = () => buscarJson(MESO_NOMES_BR);
-export const buscarMalhaMesoUf = (cod) => buscarJson(malhaMesoUfUrl(cod));
-export const buscarNomesMesoUf = (cod) => buscarJson(mesoNomesUfUrl(cod));
-export const buscarMalhaMunicipios = (cod) => buscarJson(malhaEstadoUrl(cod));
+// As malhas ficam no próprio projeto (public/malhas, geradas por
+// scripts/baixar_malhas.py): se a API do IBGE cair, o mapa continua de pé.
+// A API só é consultada se o arquivo local faltar.
+async function localOuIbge(caminho, urlIbge) {
+  try {
+    return await buscarJson(`${import.meta.env.BASE_URL}malhas/${caminho}`);
+  } catch {
+    return buscarJson(urlIbge);
+  }
+}
+
+export const buscarMalhaBrMeso = () => localOuIbge("br-meso.json", MALHA_BR_MESO);
+export const buscarNomesMesoBr = () => localOuIbge("mesorregioes.json", MESO_NOMES_BR);
+export const buscarMalhaMesoUf = (cod) => localOuIbge(`uf/${cod}-meso.json`, malhaMesoUfUrl(cod));
+export const buscarNomesMesoUf = (cod) =>
+  localOuIbge("mesorregioes.json", mesoNomesUfUrl(cod))
+    .then((lista) => lista.filter((m) => String(m.UF?.id) === String(cod)));
+export const buscarMalhaMunicipios = (cod) => localOuIbge(`uf/${cod}-mun.json`, malhaEstadoUrl(cod));
 
 // ── Códigos UF IBGE ──
 

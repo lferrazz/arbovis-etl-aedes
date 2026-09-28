@@ -10,6 +10,18 @@ import {
 } from "../api.js";
 import { n } from "./Graficos.jsx";
 
+const SEM_TAXA = "#cbd5e1";
+
+// Valor que colore o polígono na métrica escolhida; null = taxa não calculada.
+const valorDe = (item, metrica) => (metrica === "incidencia" ? item?.incidencia ?? null : item?.casos || 0);
+
+// Log: sem ele, o maior valor (SP em notificações) achata todo o resto.
+const intensidade = (v, max) => (max > 1 && v ? Math.log(v + 1) / Math.log(max + 1) : 0);
+
+function textoTooltip(nome, item) {
+  return `<b>${nome}</b> · ${n(item?.casos || 0)} notificações`;
+}
+
 function corCalor(t) {
   const h = 50 * (1 - t);
   const s = 85 + 10 * t;
@@ -79,7 +91,7 @@ function ZoomComCtrl({ aoRolarSemCtrl }) {
 
 export default function Mapa({
   ufSel, onSelectUf, onSelectMunicipio, municipioSel,
-  mesorregioes, mesoSel, onSelectMeso, cidadesMeso,
+  mesorregioes, mesoSel, onSelectMeso, cidadesMeso, metrica = "casos",
 }) {
   // ── geo data (was useGeoMalha) ──
   const [geoBrMeso, setGeoBrMeso] = useState(null);
@@ -157,25 +169,33 @@ export default function Mapa({
     return Object.fromEntries(cidadesMeso.map((m) => [String(m.cod_ibge), m]));
   }, [mesoSel, cidadesMeso]);
 
-  const casosMesoMap = useMemo(() => Object.fromEntries((mesorregioes || []).map((m) => [m.mesorregiao, m])), [mesorregioes]);
-  const maxMeso = Math.max(1, ...(mesorregioes || []).map((m) => m.casos));
-  const maxMun = Math.max(1, ...Object.values(casosMun).map((m) => m.casos || 0));
+  // Chave UF + nome: só o nome deixaria duas mesorregiões homônimas de estados
+  // diferentes sobrescreverem uma à outra no mapa nacional.
+  const casosMesoMap = useMemo(
+    () => Object.fromEntries((mesorregioes || []).map((m) => [`${m.uf}|${m.mesorregiao}`, m])),
+    [mesorregioes],
+  );
+  const maxMeso = Math.max(1, ...(mesorregioes || []).map((m) => valorDe(m, metrica) || 0));
+  const maxMun = Math.max(1, ...Object.values(casosMun).map((m) => valorDe(m, metrica) || 0));
+
+  function estiloValor(item, max, vazio) {
+    const v = valorDe(item, metrica);
+    if (metrica === "incidencia" && item && v == null) return { fillColor: SEM_TAXA, fillOpacity: 0.6 };
+    return { fillColor: corCalor(intensidade(v, max)), fillOpacity: v ? 0.75 : vazio };
+  }
 
   function estiloMesoBr(f) {
     const cod = String(f.properties.codarea);
     const info = infoMesoBr[cod];
-    const nome = info?.nome || "";
-    const casos = casosMesoMap[nome]?.casos || 0;
-    const t = maxMeso > 1 ? Math.log(casos + 1) / Math.log(maxMeso + 1) : 0;
-    return { fillColor: corCalor(t), fillOpacity: casos ? 0.75 : 0.05, weight: 0.5, color: "#ffffff" };
+    const item = casosMesoMap[`${info?.uf}|${info?.nome}`];
+    return { ...estiloValor(item, maxMeso, 0.05), weight: 0.5, color: "#ffffff" };
   }
   function aoMesoBr(f, layer) {
     const cod = String(f.properties.codarea);
     const info = infoMesoBr[cod];
     const nome = info?.nome || cod;
     const uf = info?.uf || "";
-    const casos = casosMesoMap[nome]?.casos || 0;
-    layer.bindTooltip(`<b>${nome}</b> · ${uf} · ${n(casos)} casos`, { sticky: true });
+    layer.bindTooltip(textoTooltip(`${nome} · ${uf}`, casosMesoMap[`${uf}|${nome}`]), { sticky: true });
     layer.on({
       click: () => uf && onSelectUf(uf),
       mouseover: (e) => e.target.setStyle({ weight: 2, color: "#131c2b" }),
@@ -186,19 +206,16 @@ export default function Mapa({
   function estiloMesoUf(f) {
     const cod = String(f.properties.codarea);
     const nome = nomesMesoUf[cod] || "";
-    const casos = casosMesoMap[nome]?.casos || 0;
-    const t = maxMeso > 1 ? Math.log(casos + 1) / Math.log(maxMeso + 1) : 0;
     const sel = mesoSel === nome;
     return {
-      fillColor: corCalor(t), fillOpacity: casos ? 0.75 : 0.05,
+      ...estiloValor(casosMesoMap[`${ufSel}|${nome}`], maxMeso, 0.05),
       weight: sel ? 2.5 : 1, color: sel ? "#131c2b" : "#ffffff",
     };
   }
   function aoMesoUf(f, layer) {
     const cod = String(f.properties.codarea);
     const nome = nomesMesoUf[cod] || cod;
-    const casos = casosMesoMap[nome]?.casos || 0;
-    layer.bindTooltip(`<b>${nome}</b> · ${n(casos)} casos`, { sticky: true });
+    layer.bindTooltip(textoTooltip(nome, casosMesoMap[`${ufSel}|${nome}`]), { sticky: true });
     layer.on({
       click: () => onSelectMeso(nome),
       mouseover: (e) => e.target.setStyle({ weight: 2.5, color: "#131c2b" }),
@@ -208,18 +225,16 @@ export default function Mapa({
 
   function estiloMun(f) {
     const cod = String(f.properties.codarea);
-    const casos = casosMun[cod]?.casos || 0;
-    const t = maxMun > 1 ? Math.log(casos + 1) / Math.log(maxMun + 1) : 0;
     const sel = municipioSel && String(municipioSel.cod_ibge) === cod;
     return {
-      fillColor: corCalor(t), fillOpacity: casos ? 0.75 : 0.04,
+      ...estiloValor(casosMun[cod], maxMun, 0.04),
       weight: sel ? 2.5 : 0.5, color: sel ? "#131c2b" : "#ffffff",
     };
   }
   function aoMun(f, layer) {
     const cod = String(f.properties.codarea);
     const m = casosMun[cod];
-    layer.bindTooltip(`<b>${m?.municipio || cod}</b> · ${n(m?.casos || 0)} casos`, { sticky: true });
+    layer.bindTooltip(textoTooltip(m?.municipio || cod, m), { sticky: true });
     layer.on({
       click: () => m && onSelectMunicipio({ cod_ibge: Number(cod), municipio: m.municipio, uf: ufSel }),
       mouseover: (e) => e.target.setStyle({ weight: 2, color: "#131c2b" }),
@@ -240,13 +255,13 @@ export default function Mapa({
       <ZoomComCtrl aoRolarSemCtrl={avisarSobreCtrl} />
       <AjustarVista bounds={bounds} />
       {!ufSel && geoBrMeso && (
-        <GeoJSON key="br-meso" data={geoBrMeso} style={estiloMesoBr} onEachFeature={aoMesoBr} />
+        <GeoJSON key={`br-meso-${metrica}`} data={geoBrMeso} style={estiloMesoBr} onEachFeature={aoMesoBr} />
       )}
       {ufSel && !mesoSel && geoMesoUf && (
-        <GeoJSON key={`meso-${ufSel}`} data={geoMesoUf} style={estiloMesoUf} onEachFeature={aoMesoUf} />
+        <GeoJSON key={`meso-${ufSel}-${metrica}`} data={geoMesoUf} style={estiloMesoUf} onEachFeature={aoMesoUf} />
       )}
       {ufSel && mesoSel && geoMun && (
-        <GeoJSON key={`mun-${ufSel}-${mesoSel}-${Object.keys(casosMun).length}-${municipioSel?.cod_ibge || ""}`}
+        <GeoJSON key={`mun-${ufSel}-${mesoSel}-${metrica}-${Object.keys(casosMun).length}-${municipioSel?.cod_ibge || ""}`}
                  data={geoMun} style={estiloMun} onEachFeature={aoMun} />
       )}
       </MapContainer>

@@ -184,8 +184,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .grade-mapa > .card + .card { margin-top: 0; }
 .grafico { flex: 1 1 auto; min-height: 300px; height: 300px; width: 100%; }
 /* Para gráficos com muitas categorias de rótulo longo. */
-.grafico.alto { min-height: 400px; height: 400px; }
-@media (max-width: 1200px) { .grade3 { grid-template-columns: 1fr 1fr; } }
+.grafico.alto { min-height: 400px; height: 400px; }@media (max-width: 1200px) { .grade3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1000px) { .grade2, .grade3, .grade-mapa { grid-template-columns: 1fr; } }
 
 /* Mapa e lista numa linha de altura FIXA: os dois cards têm sempre o mesmo

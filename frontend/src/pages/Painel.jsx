@@ -10,7 +10,7 @@ import VisaoTendencias from "../components/vistas/VisaoTendencias.jsx";
 import { GRAOS, completarSerie, fmtBR, grauPermitido, grauSugerido } from "../datas.js";
 import { normalizar } from "../texto.js";
 
-const CORES = { dengue: "#ef4444", zika: "#a855f7", chikungunya: "#f59e0b" };
+const CORES = { dengue: "#2563eb", zika: "#a855f7", chikungunya: "#f59e0b" };
 
 const TITULOS = {
   geral: "Visão geral",
@@ -21,13 +21,21 @@ const TITULOS = {
   qualidade: "Qualidade dos dados",
 };
 
-function rankingUf(porUf) {
-  return [...porUf].sort((a, b) => b.casos - a.casos).slice(0, 10);
+// Por incidência, só entra quem tem a taxa calculada (município com 100 mil
+// hab. ou mais); UF e mesorregião sempre têm.
+function ordenarPorMetrica(lista, metrica) {
+  if (metrica !== "incidencia") return lista;
+  return lista.filter((x) => x.incidencia != null).sort((a, b) => b.incidencia - a.incidencia);
+}
+
+function rankingUf(porUf, metrica) {
+  const lista = metrica === "incidencia" ? porUf : [...porUf].sort((a, b) => b.casos - a.casos);
+  return ordenarPorMetrica(lista, metrica).slice(0, 10);
 }
 
 function tiposPct(tipos) {
   const total = tipos.reduce((s, t) => s + t.casos, 0) || 1;
-  return tipos.map((t) => ({ tipo: t.tipo, pct: +(t.casos / total * 100).toFixed(1) }));
+  return tipos.map((t) => ({ tipo: t.tipo, pct: t.casos / total * 100 }));
 }
 
 function listaMunicipios(cidades, busca, temUf) {
@@ -59,7 +67,9 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const [comparar, setComparar] = useState([]);
   const [comparacao, setComparacao] = useState(null);
   const [panorama, setPanorama] = useState(null);
-  const [metricaComp, setMetricaComp] = useState("absoluto");
+  // Uma métrica só para mapa, listas, ranking de estados e comparação.
+  const [metricaGeo, setMetricaGeo] = useState("casos");
+  const [topIncidencia, setTopIncidencia] = useState({ chave: "", dados: [] });
 
   const periodo = useMemo(() => ({ inicio: filtros.inicio, fim: filtros.fim }), [filtros.inicio, filtros.fim]);
   const params = useMemo(() => ({ doenca, uf: filtros.uf, ...periodo }), [doenca, filtros.uf, periodo]);
@@ -111,6 +121,20 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       : []),
     [serie, chaveSerie, granularidade, periodo],
   );
+
+  // Sem UF, o /casos/mapa principal traz só o top 20 por notificações; o top por
+  // incidência precisa de outra consulta, que o backend limita a cidades com
+  // 100 mil hab. ou mais. Separada para trocar a métrica sem recarregar a tela.
+  const chaveTop = JSON.stringify(params);
+  const precisaTop = metricaGeo === "incidencia" && !filtros.uf;
+  useEffect(() => {
+    if (!precisaTop) return undefined;
+    let vivo = true;
+    api("/casos/mapa", { ...params, limite: 20, ordem: "incidencia" })
+      .then((d) => vivo && setTopIncidencia({ chave: chaveTop, dados: d }))
+      .catch(() => vivo && setTopIncidencia({ chave: chaveTop, dados: [] }));
+    return () => { vivo = false; };
+  }, [precisaTop, params, chaveTop]);
 
   // A seleção NÃO é limpa ao trocar de UF: navegar pelo mapa até outro estado
   // para achar uma cidade pequena faz parte do fluxo de comparar.
@@ -209,7 +233,10 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   if (dados.erro) return <div className="carregando">Erro ao carregar: {dados.erro}</div>;
 
   const { resumo, sintomas, demografia, tipos, mapa, porUf, sazonal, regiao, desfecho, mesorregioes } = dados;
-  const cidades = cidadesMeso || mapa;
+  const baseCidades = cidadesMeso
+    || (precisaTop ? (topIncidencia.chave === chaveTop ? topIncidencia.dados : []) : mapa);
+  const cidades = ordenarPorMetrica(baseCidades, metricaGeo);
+  const mesorregioesOrd = ordenarPorMetrica(mesorregioes, metricaGeo);
   const nomeExib = nomeExibicao(doenca);
   const local = filtros.uf || "o Brasil";
   const listaMun = listaMunicipios(cidades, busca, !!filtros.uf);
@@ -220,15 +247,16 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const SUBS = {
     geral: (
       <>Entre {fmtBR(periodo.inicio)} e {fmtBR(periodo.fim)}, {local} registrou <b>{n(resumo.casos)}</b>{" "}
-        casos {doenca ? `de ${nomeExib}` : "das arboviroses"}, com <b>{n(resumo.obitos)}</b> óbitos.</>
+        notificações {doenca ? `de ${nomeExib}` : "de arboviroses"}, das quais <b>{n(resumo.confirmados)}</b>{" "}
+        foram confirmadas, com <b>{n(resumo.obitos)}</b> óbitos.</>
     ),
     mapas: "Clique numa mesorregião para filtrar por estado; depois, clique novamente para ver os municípios.",
     tendencias: (
-      <>Casos e óbitos de {fmtBR(periodo.inicio)} a {fmtBR(periodo.fim)}. A granularidade se ajusta ao
+      <>Notificações e óbitos de {fmtBR(periodo.inicio)} a {fmtBR(periodo.fim)}. A granularidade se ajusta ao
         período escolhido no calendário, e dá para trocar entre dia, semana, mês e ano.</>
     ),
-    demografia: "Distribuição das notificações por faixa etária.",
-    sintomas: "Sinais clínicos mais relatados e os tipos de unidade que absorvem os casos.",
+    demografia: "Distribuição das notificações por faixa etária e por sexo.",
+    sintomas: "Sinais clínicos mais relatados e os tipos de unidade que absorvem as notificações.",
     qualidade: "Quanto da base está completa e o que falta em cada campo, no mesmo recorte de doença, UF e período das outras abas. Registros sem data entram no período pelo ano da notificação.",
   };
 
@@ -238,30 +266,32 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       <p className="vista-sub">{SUBS[vista]}</p>
 
       {vista === "geral" && (
-        <VisaoGeral cor={cor} resumo={resumo} serie={serieVisivel} grau={granularidade} mapa={mapa}
-                    sazonal={sazonal} regiao={regiao} desfecho={desfecho} ufSel={filtros.uf} />
+        <VisaoGeral cor={cor} resumo={resumo} serie={serieVisivel} grau={granularidade} locais={cidades}
+                    sazonal={sazonal} regiao={regiao} desfecho={desfecho} ufSel={filtros.uf}
+                    metrica={metricaGeo} setMetrica={setMetricaGeo} />
       )}
 
       {vista === "mapas" && (
         <VisaoMapas filtros={filtros} onVoltarBrasil={voltarBrasil} onVoltarMesorregioes={limparSelecaoMapa}
-                    mesorregioes={mesorregioes} mesorregiaoSel={mesorregiaoSel} onSelectMeso={abrirMeso}
+                    mesorregioes={mesorregioesOrd} mesorregiaoSel={mesorregiaoSel} onSelectMeso={abrirMeso}
                     municipioSel={municipioSel} onSelectMunicipio={selecionarMunicipio} onSelectUf={selecionarUf}
                     cidadesMeso={cidadesMeso} listaMun={listaMun} busca={busca} setBusca={setBusca}
                     bairros={bairros} panorama={panorama}
                     modoComparar={modoComparar} setModoComparar={setModoComparar}
                     comparar={comparar} onAlternarComparar={alternarComparar} todosMunicipios={todosMunicipios}
-                    comparacao={comparacao} metricaComp={metricaComp} setMetricaComp={setMetricaComp}
+                    comparacao={comparacao} metrica={metricaGeo} setMetrica={setMetricaGeo}
                     onLimparComparacao={limparComparacao} />
       )}
 
       {vista === "tendencias" && (
         <VisaoTendencias cor={cor} serie={serieVisivel} granularidade={granularidade}
                          setGranularidade={setGranularidade} permitidos={grausPermitidos}
-                         sazonal={sazonal} rankingUf={rankingUf(porUf)} />
+                         sazonal={sazonal} rankingUf={rankingUf(porUf, metricaGeo)}
+                         metrica={metricaGeo} setMetrica={setMetricaGeo} />
       )}
 
       {vista === "demografia" && (
-        <VisaoDemografia cor={cor} demografia={demografia} desfecho={desfecho} />
+        <VisaoDemografia cor={cor} demografia={demografia} />
       )}
 
       {vista === "sintomas" && (

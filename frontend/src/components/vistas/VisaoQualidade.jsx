@@ -12,9 +12,10 @@ const CAMPOS = [
   },
   {
     chave: "evolucao_ignorada", rotulo: "Evolução ignorada", icone: "obitos", cor: "#ef4444",
-    ajuda: "Não se sabe como o caso terminou (cura, óbito ou outro): o campo está vazio ou marcado "
-      + "como \"ignorado\". Esses casos entram no total, mas nunca como óbito, então a "
-      + "letalidade real pode ser um pouco maior que a mostrada.",
+    ajuda: "Não se sabe como o caso terminou (cura, óbito ou outro): o campo está vazio, marcado "
+      + "como \"ignorado\" ou com um código inválido. Esses casos nunca entram como óbito, então a "
+      + "letalidade real pode ser um pouco maior que a mostrada. Aqui contam todas as notificações; "
+      + "o gráfico de Desfecho da Visão Geral conta só os casos confirmados.",
   },
   {
     chave: "classificacao_vazia", rotulo: "Classificação vazia", icone: "qualidade", cor: "#f59e0b",
