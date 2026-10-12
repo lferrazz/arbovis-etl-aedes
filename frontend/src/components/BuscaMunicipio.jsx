@@ -19,9 +19,6 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
   const sugestoes = useMemo(() => {
     if (!termo) return [];
     const escolhidos = new Set(selecionados.map((c) => c.cod_ibge));
-    // Nome exato > começa com o termo > só contém; empate vai para o nome mais curto.
-    // Assim "jatai" traz Jataí antes de Jataizinho, e "rio verde go" traz Rio Verde
-    // antes de Carmo do Rio Verde. Aceita o termo com a UF no fim ("rio verde go").
     const achados = [];
     for (const m of indice) {
       if (escolhidos.has(m.cod_ibge)) continue;
@@ -82,7 +79,6 @@ export default function BuscaMunicipio({ municipios, selecionados, onEscolher, d
           {sugestoes.map((m, i) => (
             <li key={m.cod_ibge} id={`busca-mun-${m.cod_ibge}`} role="option" aria-selected={i === indiceAtivo}
                 className={i === indiceAtivo ? "ativo" : ""}
-                // mousedown + preventDefault: escolhe antes do blur fechar a lista
                 onMouseDown={(e) => { e.preventDefault(); escolher(m); }}
                 onMouseEnter={() => setAtivo(i)}>
               <span>{m.municipio}</span>

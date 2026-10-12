@@ -1,11 +1,3 @@
-"""Baixa as malhas do IBGE usadas pelo mapa para frontend/public/malhas/.
-
-O mapa buscava tudo na API do IBGE a cada acesso: se o serviço caísse, o mapa
-sumia. Com os arquivos no projeto, a Vercel serve tudo como estático e a API do
-IBGE vira só a reserva (ver frontend/src/api.js).
-
-Uso: python scripts/baixar_malhas.py
-"""
 from __future__ import annotations
 
 import json
@@ -35,14 +27,12 @@ def _baixar(url: str, destino: Path, tentativas: int = 4) -> None:
                 raise
             time.sleep(5 * tentativa)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    # Sem espaços: o GeoJSON é grande e o navegador baixa isso a cada visita nova.
     destino.write_text(json.dumps(dados, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"{destino.relative_to(DESTINO)}: {destino.stat().st_size / 1024:,.0f} KB")
 
 
 def main() -> None:
     _baixar(f"{BASE}/v3/malhas/paises/BR{GEO}&intrarregiao=mesorregiao", DESTINO / "br-meso.json")
-    # Nomes de todas as mesorregiões com a UF: o front filtra por estado a partir daqui.
     _baixar(f"{BASE}/v1/localidades/mesorregioes", DESTINO / "mesorregioes.json")
     for cod in COD_UF:
         _baixar(f"{BASE}/v3/malhas/estados/{cod}{GEO}&intrarregiao=mesorregiao", DESTINO / "uf" / f"{cod}-meso.json")

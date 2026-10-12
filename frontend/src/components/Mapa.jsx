@@ -8,18 +8,17 @@ import {
   buscarMalhaMesoUf, buscarNomesMesoUf,
   buscarMalhaMunicipios,
 } from "../api.js";
-import { n } from "./Graficos.jsx";
+import { n, nd } from "./Graficos.jsx";
 
 const SEM_TAXA = "#cbd5e1";
 
-// Valor que colore o polígono na métrica escolhida; null = taxa não calculada.
 const valorDe = (item, metrica) => (metrica === "incidencia" ? item?.incidencia ?? null : item?.casos || 0);
 
-// Log: sem ele, o maior valor (SP em notificações) achata todo o resto.
 const intensidade = (v, max) => (max > 1 && v ? Math.log(v + 1) / Math.log(max + 1) : 0);
 
 function textoTooltip(nome, item) {
-  return `<b>${nome}</b> · ${n(item?.casos || 0)} notificações`;
+  const incid = item?.incidencia != null ? ` · ${nd(item.incidencia)} confirmados por 100 mil hab. ao ano` : "";
+  return `<b>${nome}</b> · ${n(item?.casos || 0)} casos prováveis atendidos${incid}`;
 }
 
 function corCalor(t) {
@@ -29,7 +28,6 @@ function corCalor(t) {
   return `hsl(${h}, ${s}%, ${l}%)`;
 }
 
-// Extensão continental do Brasil (aprox.) para o mapa nacional preencher o card.
 const BOUNDS_BR = [[-33.9, -73.9], [5.3, -34.8]];
 
 function AjustarVista({ bounds }) {
@@ -40,9 +38,6 @@ function AjustarVista({ bounds }) {
   return null;
 }
 
-// O zoom mínimo fixo deixava afastar até o Brasil virar um ponto dentro do card.
-// Aqui o piso passa a ser o zoom em que o Brasil ainda cabe inteiro, recalculado
-// quando o card muda de tamanho, já que depende da largura disponível.
 function ZoomMinimo() {
   const map = useMap();
   useEffect(() => {
@@ -53,8 +48,6 @@ function ZoomMinimo() {
       if (map.getZoom() < minimo) map.setZoom(minimo, { animate: false });
     };
     ajustar();
-    // ResizeObserver e não map.on("resize"): o Leaflet só percebe resize da janela,
-    // e aqui a largura do card muda sozinha (mapa fixo, card de comparação abrindo).
     const observador = new ResizeObserver(() => {
       cancelAnimationFrame(quadro);
       quadro = requestAnimationFrame(() => {
@@ -68,8 +61,6 @@ function ZoomMinimo() {
   return null;
 }
 
-// Rolar o mouse sobre o mapa dava zoom em vez de rolar a página. Agora a roda só
-// dá zoom com Ctrl pressionado (padrão de mapa embutido); sem Ctrl, a página rola.
 function ZoomComCtrl({ aoRolarSemCtrl }) {
   const map = useMap();
   useEffect(() => {
@@ -93,7 +84,6 @@ export default function Mapa({
   ufSel, onSelectUf, onSelectMunicipio, municipioSel,
   mesorregioes, mesoSel, onSelectMeso, cidadesMeso, metrica = "casos",
 }) {
-  // ── geo data (was useGeoMalha) ──
   const [geoBrMeso, setGeoBrMeso] = useState(null);
   const [infoMesoBr, setInfoMesoBr] = useState({});
   const [geoMesoUf, setGeoMesoUf] = useState(null);
@@ -104,7 +94,6 @@ export default function Mapa({
 
   const [aviso, setAviso] = useState(false);
   const avisoTimerRef = useRef(null);
-  // Estável entre renders: o listener de wheel depende desta função.
   const avisarSobreCtrl = useCallback(() => {
     setAviso(true);
     clearTimeout(avisoTimerRef.current);
@@ -163,14 +152,11 @@ export default function Mapa({
     }
   }, [mesoSel, ufSel, nomesMesoUf, geoMesoUf]);
 
-  // ── derived data ──
   const casosMun = useMemo(() => {
     if (!mesoSel || !cidadesMeso) return {};
     return Object.fromEntries(cidadesMeso.map((m) => [String(m.cod_ibge), m]));
   }, [mesoSel, cidadesMeso]);
 
-  // Chave UF + nome: só o nome deixaria duas mesorregiões homônimas de estados
-  // diferentes sobrescreverem uma à outra no mapa nacional.
   const casosMesoMap = useMemo(
     () => Object.fromEntries((mesorregioes || []).map((m) => [`${m.uf}|${m.mesorregiao}`, m])),
     [mesorregioes],

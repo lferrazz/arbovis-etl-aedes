@@ -1,10 +1,5 @@
-// Datas trafegam como ISO "AAAA-MM-DD", o mesmo formato da API. Comparar
-// strings ISO já dá a ordem cronológica. As contas são em UTC para o fuso do
-// navegador não deslocar dias.
-
 export const LIMITES_PADRAO = { inicio: "2000-01-01", fim: "2026-04-03" };
 
-// 2026 só tem um resto de notificações tardias; o último ano completo é 2025.
 export const FIM_REFERENCIA = "2025-12-31";
 export const PERIODO_PADRAO = { inicio: "2000-01-01", fim: FIM_REFERENCIA };
 
@@ -37,11 +32,9 @@ function segundaDaSemana(iso) {
   return addDias(iso, -((diaDaSemana(iso) + 6) % 7));
 }
 
-// ── Granularidade da série ──
 
 export const GRAOS = [["dia", "Dia"], ["semana", "Semana"], ["mes", "Mês"], ["ano", "Ano"]];
 
-// Acima disso o gráfico vira um borrão de pontos (2 anos por dia = 731 pontos).
 const MAX_DIAS = { dia: 731, semana: 3653, mes: Infinity, ano: Infinity };
 export const LIMITE_TEXTO = { dia: "até 2 anos", semana: "até 10 anos" };
 
@@ -68,13 +61,20 @@ function periodosDoIntervalo(grau, inicio, fim) {
   return chaves;
 }
 
-// A API só devolve períodos que tiveram notificação. Sem preencher, um dia
-// sem casos some e a linha liga os vizinhos, sugerindo casos que não houve.
-export function completarSerie(dados, grau, inicio, fim) {
+export const INICIO_DADOS = { chikungunya: "2015-01-01", zika: "2016-01-01" };
+
+function fimDoPeriodo(p, grau) {
+  if (grau === "ano") return `${p}-12-31`;
+  if (grau === "mes") return `${p}-${String(diasNoMes(`${p}-01`)).padStart(2, "0")}`;
+  return grau === "semana" ? addDias(p, 6) : p;
+}
+
+export function completarSerie(dados, grau, inicio, fim, inicioDados) {
   const porPeriodo = new Map(dados.map((r) => [r.periodo, r]));
-  return periodosDoIntervalo(grau, inicio, fim).map(
-    (p) => porPeriodo.get(p) ?? { periodo: p, casos: 0, mortes: 0 },
-  );
+  return periodosDoIntervalo(grau, inicio, fim).map((p) => {
+    if (inicioDados && fimDoPeriodo(p, grau) < inicioDados) return { periodo: p, casos: null, mortes: null };
+    return porPeriodo.get(p) ?? { periodo: p, casos: 0, mortes: 0 };
+  });
 }
 
 export function rotuloPeriodo(p, grau) {
@@ -90,7 +90,6 @@ export function rotuloPeriodoLongo(p, grau) {
   return fmtBR(p);
 }
 
-// ── Atalhos do calendário ──
 
 export const dataReferencia = (limites) => (limites.fim < FIM_REFERENCIA ? limites.fim : FIM_REFERENCIA);
 

@@ -21,7 +21,6 @@ def main() -> None:
 
     sem_pop = int(df["populacao"].isna().sum())
     print(f"  população total: {int(df['populacao'].sum()):,} · sem população: {sem_pop}")
-    # Barato, e evita subir a dimensão sem população se o IBGE mudar o formato.
     if sem_pop > 5:
         raise SystemExit(f"Cobertura de população suspeita: {sem_pop} municípios sem valor.")
 

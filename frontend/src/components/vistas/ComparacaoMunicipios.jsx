@@ -38,9 +38,10 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
         </div>
       </div>
       <p className="dica">
-        O número absoluto esconde o tamanho da cidade. A incidência (casos confirmados por 100 mil
-        habitantes) mostra o peso real da doença sobre a população. Usa o período selecionado e
-        considera as três doenças, independente da aba escolhida. População do Censo 2022 (IBGE).
+        O número absoluto esconde o tamanho da cidade. Os casos atendidos contam pela cidade onde o caso
+        foi notificado; a incidência conta os confirmados pela cidade onde a pessoa mora, por 100 mil
+        habitantes ao ano, e mostra o peso real da doença sobre a população. Usa o período selecionado e
+        as três doenças, independente da aba escolhida. População do Censo 2022 (IBGE).
       </p>
 
       <div className="tabela-rolavel">
@@ -49,12 +50,12 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
             <tr>
               <th>Município</th>
               <th>População</th>
-              <th>Notificações</th>
-              <th>Confirmados</th>
-              <th>Incidência (conf. / 100 mil)</th>
-              <th>% da população notificada</th>
-              <th>Óbitos</th>
-              <th>Óbitos / 100 mil</th>
+              <th>Casos atendidos</th>
+              <th>Confirmados atendidos</th>
+              <th>Incidência (conf. por 100 mil hab. ao ano)</th>
+              <th>% da população com caso provável</th>
+              <th>Óbitos entre confirmados</th>
+              <th>Óbitos por 100 mil hab. ao ano</th>
               <th>Letalidade (sobre confirmados)</th>
               {SERIES.map((s) => <th key={s.chave}>{s.nome}</th>)}
             </tr>
@@ -63,14 +64,14 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
             {dados.map((m) => (
               <tr key={m.cod_ibge}>
                 <th scope="row">{m.municipio}/{m.uf}</th>
-                <td>{m.populacao == null ? "sem dado" : n(m.populacao)}</td>
+                <td>{m.populacao == null ? "sem população" : n(m.populacao)}</td>
                 <td>{n(m.casos)}</td>
                 <td>{n(m.confirmados)}</td>
-                <td className="destaque">{taxa(m.incidencia)}</td>
-                <td>{m.pct_populacao == null ? "sem dado" : `${nd(m.pct_populacao)}%`}</td>
+                <td className="destaque">{m.populacao == null ? "sem população" : taxa(m.incidencia)}</td>
+                <td>{m.pct_populacao == null ? "sem população" : `${nd(m.pct_populacao)}%`}</td>
                 <td>{n(m.obitos)}</td>
-                <td>{nd(m.obitos_100mil)}</td>
-                <td>{m.letalidade == null ? "—" : `${nd(m.letalidade, 3)}%`}</td>
+                <td>{m.populacao == null ? "sem população" : nd(m.obitos_100mil)}</td>
+                <td>{m.letalidade == null ? "sem dado" : `${nd(m.letalidade, 3)}%`}</td>
                 {SERIES.map((s) => (
                   <td key={s.chave}>
                     {porIncidencia ? taxa(m.por_doenca[s.chave].incidencia) : n(m.por_doenca[s.chave].casos)}
@@ -87,8 +88,8 @@ export default function ComparacaoMunicipios({ estado, metrica, setMetrica, onLi
 
       {temPequeno && (
         <p className="dica" style={{ marginTop: 12 }}>
-          A incidência só é calculada para municípios com 100 mil habitantes ou mais (—): abaixo
-          disso, poucos casos a mais ou a menos fazem a taxa oscilar muito.
+          A incidência só é calculada para municípios com 100 mil habitantes ou mais (aparece como
+          "sem dado"): abaixo disso, poucos casos a mais ou a menos fazem a taxa oscilar muito.
         </p>
       )}
       {temSemPopulacao && (

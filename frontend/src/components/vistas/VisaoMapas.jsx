@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import Mapa from "../Mapa.jsx";
-import { AJUDA_INCIDENCIA, AlternadorMetrica, Kpi, n, nd, taxa, valorMetrica } from "../Graficos.jsx";
+import {
+  AJUDA_ATENDIDOS, AJUDA_INCIDENCIA, AJUDA_OBITOS, AlternadorMetrica, Kpi, n, nd, taxa, valorMetrica,
+} from "../Graficos.jsx";
 import BuscaMunicipio from "../BuscaMunicipio.jsx";
 import ComparacaoMunicipios from "./ComparacaoMunicipios.jsx";
 
@@ -10,8 +12,6 @@ const DOENCAS = [
   { chave: "chikungunya", nome: "Chikungunya", cor: "#f59e0b" },
 ];
 
-// Mesmos números da comparação, para uma cidade só: o clique deixa de mostrar
-// apenas a contagem de casos e passa a mostrar o peso sobre a população.
 function PanoramaCidade({ panorama }) {
   if (!panorama || panorama.carregando) return <p className="dica">Carregando números da cidade…</p>;
   if (panorama.erro || !panorama.dados) return <p className="dica">Não foi possível carregar os números da cidade.</p>;
@@ -21,27 +21,29 @@ function PanoramaCidade({ panorama }) {
   return (
     <>
       <div className="kpis kpis-6 kpis-compactos">
-        <Kpi rotulo="População" valor={semPopulacao ? "sem dado" : p.populacao} icone="demografia" cor="#64748b"
-             ajuda="População residente no Censo 2022 do IBGE." />
-        <Kpi rotulo="Notificações" valor={p.casos} icone="casos" cor="#0ea5e9"
-             ajuda="Notificações das três arboviroses no período selecionado, confirmadas ou não." />
-        <Kpi rotulo="Incidência (por 100 mil)" valor={taxa(p.incidencia)} icone="tendencias" cor="#10b981"
-             detalhe={p.incidencia == null && !semPopulacao ? "menos de 100 mil hab." : undefined}
+        <Kpi rotulo="População" valor={semPopulacao ? "sem população" : p.populacao} icone="demografia" cor="#64748b"
+             ajuda="População residente no Censo 2022 do IBGE. Municípios criados depois do Censo aparecem sem população." />
+        <Kpi rotulo="Casos atendidos" valor={p.casos} icone="casos" cor="#0ea5e9"
+             ajuda={`${AJUDA_ATENDIDOS} Soma as três arboviroses no período selecionado.`} />
+        <Kpi rotulo="Incidência (média anual)" valor={semPopulacao ? "sem população" : taxa(p.incidencia)}
+             icone="tendencias" cor="#10b981"
+             detalhe={p.incidencia == null && !semPopulacao ? "menos de 100 mil hab." : "confirmados por 100 mil hab."}
              ajuda={AJUDA_INCIDENCIA} />
-        <Kpi rotulo="% da população notificada" valor={p.pct_populacao == null ? "sem dado" : `${nd(p.pct_populacao)}%`}
+        <Kpi rotulo="% da população com caso provável"
+             valor={p.pct_populacao == null ? "sem população" : `${nd(p.pct_populacao)}%`}
              icone="qualidade" cor="#8b5cf6"
-             ajuda="Notificações sobre a população. Uma mesma pessoa pode ter sido notificada mais de uma vez ao longo dos anos." />
+             ajuda="Casos prováveis de moradores da cidade sobre a população, somando todo o período. Uma mesma pessoa pode ter adoecido mais de uma vez ao longo dos anos." />
         <Kpi rotulo="Óbitos" valor={p.obitos} icone="obitos" cor="#ef4444"
-             ajuda="Mortes causadas pela própria arbovirose." />
-        <Kpi rotulo="Letalidade" valor={p.letalidade == null ? "—" : `${nd(p.letalidade, 3)}%`} icone="letalidade" cor="#f59e0b"
-             ajuda="Óbitos pelo agravo sobre os casos confirmados, o denominador usual em epidemiologia." />
+             detalhe="entre confirmados atendidos aqui" ajuda={AJUDA_OBITOS} />
+        <Kpi rotulo="Letalidade" valor={p.letalidade == null ? "sem dado" : `${nd(p.letalidade, 3)}%`} icone="letalidade" cor="#f59e0b"
+             ajuda="Óbitos entre os casos confirmados divididos pelos casos confirmados. Numerador e denominador saem do mesmo grupo." />
       </div>
       <div className="panorama-doencas">
         {DOENCAS.map((d) => (
           <span key={d.chave} className="doenca-chip">
             <i style={{ background: d.cor }} />
             {d.nome}: <b>{n(p.por_doenca[d.chave].casos)}</b>
-            {p.por_doenca[d.chave].incidencia != null && <em>{nd(p.por_doenca[d.chave].incidencia)} conf. por 100 mil</em>}
+            {p.por_doenca[d.chave].incidencia != null && <em>{nd(p.por_doenca[d.chave].incidencia)} conf. por 100 mil ao ano</em>}
           </span>
         ))}
       </div>
@@ -59,16 +61,13 @@ export default function VisaoMapas({
   comparacao, metrica, setMetrica, onLimparComparacao,
 }) {
   const porIncidencia = metrica === "incidencia";
-  // O card de unidades nasce abaixo da dobra; sem isto o usuário clica na cidade
-  // e não encontra o resultado.
   const refBairros = useRef(null);
   const ultimoRolado = useRef(null);
   const codSel = municipioSel?.cod_ibge;
 
   useEffect(() => {
-    // No modo comparar o clique não abre as unidades, então não há para onde rolar.
     if (!codSel || modoComparar || !refBairros.current) return;
-    if (ultimoRolado.current === codSel) return; // não re-rola quando os bairros chegam
+    if (ultimoRolado.current === codSel) return;
     ultimoRolado.current = codSel;
     const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     refBairros.current.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
@@ -84,7 +83,6 @@ export default function VisaoMapas({
               <AlternadorMetrica metrica={metrica} setMetrica={setMetrica} />
               {filtros.uf && <button className="voltar" onClick={onVoltarBrasil}>← Brasil</button>}
               {mesorregiaoSel && <button className="voltar" onClick={onVoltarMesorregioes}>← Mesorregiões</button>}
-              {/* Sair também limpa: antes a tabela continuava na tela depois de sair. */}
               <button className={`voltar ${modoComparar ? "ativo" : ""}`} aria-pressed={modoComparar}
                       onClick={() => (modoComparar ? onLimparComparacao() : setModoComparar(true))}>
                 {modoComparar ? "Sair da comparação" : "Comparar cidades"}
@@ -123,7 +121,9 @@ export default function VisaoMapas({
               <h3>Mesorregiões de {filtros.uf}</h3>
               <p className="dica">
                 Clique para ver as cidades da região.
-                {porIncidencia && " Casos confirmados por 100 mil habitantes."}
+                {porIncidencia
+                  ? " Casos confirmados de moradores por 100 mil habitantes ao ano."
+                  : " Casos prováveis atendidos na região."}
               </p>
               <ul className="ranking">
                 {mesorregioes.map((mr) => (
@@ -137,11 +137,14 @@ export default function VisaoMapas({
             </div>
           )}
           <h3 className={`lista-titulo ${filtros.uf && mesorregioes.length ? "comEspaco" : ""}`}>
-            {mesorregiaoSel ? `Cidades de ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}` : "Municípios mais afetados"}
+            {mesorregiaoSel ? `Cidades de ${mesorregiaoSel}` : filtros.uf ? `Cidades de ${filtros.uf}`
+              : porIncidencia ? "Maior incidência" : "Onde os casos foram atendidos"}
           </h3>
-          {porIncidencia && (
-            <p className="dica">Incidência só para municípios com 100 mil habitantes ou mais.</p>
-          )}
+          <p className="dica">
+            {porIncidencia
+              ? "Confirmados por 100 mil habitantes ao ano, pela cidade onde a pessoa mora. Só municípios com 100 mil habitantes ou mais."
+              : "Casos prováveis pela cidade onde foram notificados. Clique numa cidade para ver as unidades de saúde."}
+          </p>
           {filtros.uf && <input className="busca" placeholder="Buscar cidade…" value={busca} onChange={(e) => setBusca(e.target.value)} />}
           <ul className="ranking rolavel">
             {listaMun.map((m) => {
@@ -172,7 +175,10 @@ export default function VisaoMapas({
           <PanoramaCidade panorama={panorama} />
 
           <h3 className="lista-titulo">Unidades de saúde</h3>
-          <p className="dica">Unidade (CNES) que fez a notificação, com o bairro onde fica.</p>
+          <p className="dica">
+            Unidades de saúde (CNES) que mais notificaram casos prováveis na cidade, com o bairro onde cada
+            uma fica. Mostra para onde os doentes procuraram atendimento.
+          </p>
           {bairros.length === 0 && <p className="dica">Carregando unidades…</p>}
           <div className="grade2">
             {[bairros.slice(0, Math.ceil(bairros.length / 2)),

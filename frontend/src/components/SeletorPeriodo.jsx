@@ -12,7 +12,6 @@ const SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
 function Mes({ mes, rascunho, hover, limites, onDia, onHover }) {
   const ano = mes.slice(0, 4);
   const m = mes.slice(5, 7);
-  // Enquanto só o início foi clicado, o dia sob o mouse faz o papel do fim.
   const outraPonta = rascunho.fim ?? (rascunho.inicio ? hover : null);
   const [lo, hi] = [rascunho.inicio, outraPonta].filter(Boolean).sort();
 
@@ -78,7 +77,6 @@ export default function SeletorPeriodo({ inicio, fim, limites, onAplicar }) {
   const mesMin = inicioMes(limites.inicio);
   const mesMax = mesSomado(inicioMes(limites.fim), -1);
   const limitarMes = (m) => (m < mesMin ? mesMin : m > mesMax ? mesMax : m);
-  // Mostra `iso` no mês da direita, com o anterior ao lado.
   const mostrarFim = (iso) => setMes(limitarMes(mesSomado(inicioMes(iso), -1)));
 
   function abrir() {

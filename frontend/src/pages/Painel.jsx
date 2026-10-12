@@ -7,7 +7,7 @@ import VisaoMapas from "../components/vistas/VisaoMapas.jsx";
 import VisaoQualidade from "../components/vistas/VisaoQualidade.jsx";
 import VisaoSintomas from "../components/vistas/VisaoSintomas.jsx";
 import VisaoTendencias from "../components/vistas/VisaoTendencias.jsx";
-import { GRAOS, completarSerie, fmtBR, grauPermitido, grauSugerido } from "../datas.js";
+import { GRAOS, INICIO_DADOS, completarSerie, fmtBR, grauPermitido, grauSugerido } from "../datas.js";
 import { normalizar } from "../texto.js";
 
 const CORES = { dengue: "#2563eb", zika: "#a855f7", chikungunya: "#f59e0b" };
@@ -21,8 +21,6 @@ const TITULOS = {
   qualidade: "Qualidade dos dados",
 };
 
-// Por incidência, só entra quem tem a taxa calculada (município com 100 mil
-// hab. ou mais); UF e mesorregião sempre têm.
 function ordenarPorMetrica(lista, metrica) {
   if (metrica !== "incidencia") return lista;
   return lista.filter((x) => x.incidencia != null).sort((a, b) => b.incidencia - a.incidencia);
@@ -67,15 +65,12 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const [comparar, setComparar] = useState([]);
   const [comparacao, setComparacao] = useState(null);
   const [panorama, setPanorama] = useState(null);
-  // Uma métrica só para mapa, listas, ranking de estados e comparação.
   const [metricaGeo, setMetricaGeo] = useState("casos");
   const [topIncidencia, setTopIncidencia] = useState({ chave: "", dados: [] });
 
   const periodo = useMemo(() => ({ inicio: filtros.inicio, fim: filtros.fim }), [filtros.inicio, filtros.fim]);
   const params = useMemo(() => ({ doenca, uf: filtros.uf, ...periodo }), [doenca, filtros.uf, periodo]);
 
-  // A escolha manual de granularidade vale só para o período em que foi feita;
-  // mudou o período, volta a sugestão automática (dia/semana/mês/ano).
   const chavePeriodo = `${periodo.inicio}|${periodo.fim}`;
   const granularidade =
     grauEscolhido.chave === chavePeriodo && grauPermitido(grauEscolhido.grau, periodo.inicio, periodo.fim)
@@ -114,17 +109,13 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
     return () => { vivo = false; };
   }, [params, granularidade, chaveSerie]);
 
-  // Enquanto a série nova não chega, não mostra a antiga com o eixo do período novo.
   const serieVisivel = useMemo(
     () => (serie.chave === chaveSerie
-      ? completarSerie(serie.dados, granularidade, periodo.inicio, periodo.fim)
+      ? completarSerie(serie.dados, granularidade, periodo.inicio, periodo.fim, INICIO_DADOS[doenca])
       : []),
-    [serie, chaveSerie, granularidade, periodo],
+    [serie, chaveSerie, granularidade, periodo, doenca],
   );
 
-  // Sem UF, o /casos/mapa principal traz só o top 20 por notificações; o top por
-  // incidência precisa de outra consulta, que o backend limita a cidades com
-  // 100 mil hab. ou mais. Separada para trocar a métrica sem recarregar a tela.
   const chaveTop = JSON.stringify(params);
   const precisaTop = metricaGeo === "incidencia" && !filtros.uf;
   useEffect(() => {
@@ -136,15 +127,8 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
     return () => { vivo = false; };
   }, [precisaTop, params, chaveTop]);
 
-  // A seleção NÃO é limpa ao trocar de UF: navegar pelo mapa até outro estado
-  // para achar uma cidade pequena faz parte do fluxo de comparar.
-  // Lista completa para a busca, carregada só quando o modo comparar abre.
-  // Falha vira { erro } e não lista vazia: lista vazia fazia a busca dizer
-  // "Nenhuma cidade encontrada" quando, na verdade, a lista nem tinha carregado.
   const [todosMunicipios, setTodosMunicipios] = useState(null);
   useEffect(() => {
-    // Só depende de modoComparar: sair e entrar de novo no modo tenta outra vez,
-    // sem virar um loop de requisições quando a API está fora.
     if (!modoComparar || (todosMunicipios && !todosMunicipios.erro)) return;
     setTodosMunicipios(null);
     api("/municipios")
@@ -162,7 +146,6 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       .then((d) => vivo && setComparacao({ dados: d }))
       .catch((e) => vivo && setComparacao({ erro: e.message }));
     return () => { vivo = false; };
-    // comparar.length vem de codsComparar; depender da string evita refetch por identidade nova
   }, [codsComparar, comparar.length, periodo]);
 
   function alternarComparar(m) {
@@ -179,15 +162,11 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
     setComparar([]); setModoComparar(false);
   }
 
-  // Um handler só para as duas origens de clique (lista e polígono do mapa),
-  // senão "escolher um município" faria coisas diferentes em cada lugar.
   function selecionarMunicipio(m) {
     if (modoComparar) alternarComparar(m);
     else abrirMunicipio(m);
   }
 
-  // Isolado dos demais: se /qualidade falhar, só esta aba mostra o erro.
-  // Usa os mesmos filtros das outras abas (doença, UF e período).
   useEffect(() => {
     let vivo = true;
     setQualidade({ carregando: true });
@@ -199,14 +178,10 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
 
   function abrirMunicipio(m) {
     setMunicipioSel(m);
-    // Limpa o que era da cidade anterior e marca qual é o pedido atual: as duas
-    // respostas abaixo são ignoradas se o usuário já tiver trocado de cidade.
     setBairros([]);
     setPanorama({ carregando: true });
     ultimoPedidoBairros.current = m.cod_ibge;
 
-    // Mesmo endpoint da comparação, com um município só: aproveita a população
-    // para mostrar taxa por habitante, e não apenas a contagem de casos.
     api("/municipios/comparar", { cods: String(m.cod_ibge), ...periodo })
       .then((d) => { if (ultimoPedidoBairros.current === m.cod_ibge) setPanorama({ dados: d[0] }); })
       .catch((e) => { if (ultimoPedidoBairros.current === m.cod_ibge) setPanorama({ erro: e.message }); });
@@ -247,17 +222,21 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
   const SUBS = {
     geral: (
       <>Entre {fmtBR(periodo.inicio)} e {fmtBR(periodo.fim)}, {local} registrou <b>{n(resumo.casos)}</b>{" "}
-        notificações {doenca ? `de ${nomeExib}` : "de arboviroses"}, das quais <b>{n(resumo.confirmados)}</b>{" "}
-        foram confirmadas, com <b>{n(resumo.obitos)}</b> óbitos.</>
+        casos prováveis {doenca ? `de ${nomeExib}` : "de arboviroses"}, dos quais <b>{n(resumo.confirmados)}</b>{" "}
+        foram confirmados, com <b>{n(resumo.obitos)}</b> óbitos entre os confirmados. Caso provável é toda
+        notificação que não foi descartada.</>
     ),
-    mapas: "Clique numa mesorregião para filtrar por estado; depois, clique novamente para ver os municípios.",
+    mapas: "O mapa mostra onde os casos se concentram. Clique numa mesorregião para abrir o estado e, depois, "
+      + "numa cidade para ver as unidades de saúde. Em Atendidos, cada caso conta para a cidade onde foi "
+      + "notificado. Em Incidência, conta para a cidade onde a pessoa mora, em relação à população.",
     tendencias: (
-      <>Notificações e óbitos de {fmtBR(periodo.inicio)} a {fmtBR(periodo.fim)}. A granularidade se ajusta ao
-        período escolhido no calendário, e dá para trocar entre dia, semana, mês e ano.</>
+      <>Como os casos prováveis e os óbitos variaram de {fmtBR(periodo.inicio)} a {fmtBR(periodo.fim)}. Cada
+        ponto soma os casos de um dia, semana, mês ou ano, conforme o tamanho do período escolhido no calendário.</>
     ),
-    demografia: "Distribuição das notificações por faixa etária e por sexo.",
-    sintomas: "Sinais clínicos mais relatados e os tipos de unidade que absorvem as notificações.",
-    qualidade: "Quanto da base está completa e o que falta em cada campo, no mesmo recorte de doença, UF e período das outras abas. Registros sem data entram no período pelo ano da notificação.",
+    demografia: "Quem adoeceu: os casos prováveis do recorte divididos por faixa de idade e por sexo.",
+    sintomas: "Os sinais clínicos registrados nas fichas e os tipos de unidade de saúde que atenderam os casos.",
+    qualidade: "Quanto da base veio completa do SINAN e o que falta em cada campo, no mesmo recorte de doença, "
+      + "UF e período das outras abas.",
   };
 
   return (
@@ -295,7 +274,7 @@ export default function Painel({ doenca, filtros, setFiltros, vista }) {
       )}
 
       {vista === "sintomas" && (
-        <VisaoSintomas cor={cor} sintomas={sintomas} tipos={tipos} tiposPct={tiposPct(tipos)} />
+        <VisaoSintomas cor={cor} sintomas={sintomas} tipos={tipos} tiposPct={tiposPct(tipos)} periodo={periodo} />
       )}
 
       {vista === "qualidade" && <VisaoQualidade qualidade={qualidade} ufSel={filtros.uf} />}

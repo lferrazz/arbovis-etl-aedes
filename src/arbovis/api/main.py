@@ -44,6 +44,11 @@ def get_limites_periodo():
     return queries.limites_periodo()
 
 
+@app.get("/metadados", dependencies=dep)
+def get_metadados():
+    return queries.metadados()
+
+
 @app.get("/municipios", dependencies=dep)
 def get_municipios():
     return queries.listar_municipios()
@@ -55,11 +60,9 @@ def get_comparar_municipios(
     inicio: date | None = Inicio, fim: date | None = Fim,
 ):
     try:
-        # tupla (não lista): queries._cacheado usa os argumentos como chave de dicionário.
         lista = tuple(dict.fromkeys(int(c) for c in cods.split(",") if c.strip()))
     except ValueError:
         raise HTTPException(status_code=400, detail="Códigos IBGE inválidos.")
-    # 1 código também vale: é o panorama de uma cidade só, ao clicar no mapa.
     if not 1 <= len(lista) <= 4:
         raise HTTPException(status_code=400, detail="Informe de 1 a 4 códigos IBGE.")
     return queries.comparar_municipios(lista, inicio, fim)

@@ -5,8 +5,6 @@ import requests
 
 URL_MUNICIPIOS = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
 
-# Agregado 4714 / variável 93 = população residente do Censo. A API de localidades
-# é só cadastral e não traz população.
 URL_POPULACAO = (
     "https://servicodados.ibge.gov.br/api/v3/agregados/4714"
     "/periodos/{periodo}/variaveis/93?localidades=N6[all]"

@@ -21,7 +21,6 @@ export async function api(path, params = {}) {
   return data;
 }
 
-// ── IBGE GeoJSON ──
 
 const MALHA_BR_MESO =
   "https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR" +
@@ -44,9 +43,6 @@ async function buscarJson(url) {
   return res.json();
 }
 
-// As malhas ficam no próprio projeto (public/malhas, geradas por
-// scripts/baixar_malhas.py): se a API do IBGE cair, o mapa continua de pé.
-// A API só é consultada se o arquivo local faltar.
 async function localOuIbge(caminho, urlIbge) {
   try {
     return await buscarJson(`${import.meta.env.BASE_URL}malhas/${caminho}`);
@@ -63,7 +59,6 @@ export const buscarNomesMesoUf = (cod) =>
     .then((lista) => lista.filter((m) => String(m.UF?.id) === String(cod)));
 export const buscarMalhaMunicipios = (cod) => localOuIbge(`uf/${cod}-mun.json`, malhaEstadoUrl(cod));
 
-// ── Códigos UF IBGE ──
 
 export const COD_UF = {
   "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",

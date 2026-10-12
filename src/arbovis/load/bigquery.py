@@ -10,10 +10,45 @@ from arbovis.config import LOCATION, get_bq_client, tabela_ref
 def _garantir_dataset(client: bigquery.Client, dataset: str) -> None:
     ref = bigquery.Dataset(f"{client.project}.{dataset}")
     ref.location = LOCATION
+    ref.default_table_expiration_ms = None
+    ref.default_partition_expiration_ms = None
     try:
         client.get_dataset(f"{client.project}.{dataset}")
     except NotFound:
         client.create_dataset(ref, exists_ok=True)
+
+
+def remover_expiracao(dataset: str) -> None:
+    client = get_bq_client()
+    ds = client.get_dataset(f"{client.project}.{dataset}")
+    ds.default_table_expiration_ms = None
+    ds.default_partition_expiration_ms = None
+    client.update_dataset(ds, ["default_table_expiration_ms", "default_partition_expiration_ms"])
+
+
+def apagar_doenca_ano(dataset: str, tabela: str, ano_arquivo: int, doenca: str | None = None) -> int:
+    client = get_bq_client()
+    destino = tabela_ref(dataset, tabela)
+    try:
+        tab = client.get_table(destino)
+    except NotFound:
+        return 0
+    if "ano_arquivo" not in {c.name for c in tab.schema}:
+        raise RuntimeError(
+            f"{destino} está no esquema antigo (sem ano_arquivo); recrie a tabela antes de recarregar."
+        )
+
+    filtro = "ano_arquivo = @ano"
+    params = [bigquery.ScalarQueryParameter("ano", "INT64", ano_arquivo)]
+    if doenca is not None:
+        filtro += " AND doenca = @doenca"
+        params.append(bigquery.ScalarQueryParameter("doenca", "STRING", doenca))
+    job = client.query(
+        f"DELETE FROM `{destino}` WHERE {filtro}",
+        job_config=bigquery.QueryJobConfig(query_parameters=params),
+    )
+    job.result()
+    return job.num_dml_affected_rows or 0
 
 
 def carregar_dataframe(

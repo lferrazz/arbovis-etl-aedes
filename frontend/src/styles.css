@@ -15,8 +15,6 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-/* scrollIntoView com behavior:"auto" cai de volta para o valor do CSS. Sem isto,
-   quem pede "reduzir movimento" continuaria vendo a rolagem animada. */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0; background: var(--bg); color: var(--text);
@@ -25,7 +23,6 @@ body {
 a { color: inherit; text-decoration: none; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 
-/* ---------- App shell ---------- */
 .app { display: flex; min-height: 100vh; }
 
 .sidebar {
@@ -49,7 +46,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 
 .main { margin-left: var(--sidebar); flex: 1; min-width: 0; }
 
-/* ---------- Topbar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 90;
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
@@ -72,21 +68,16 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 }
 .campo select:hover { border-color: var(--faint); }
 
-/* ---------- Conteúdo ---------- */
 .conteudo { padding: 30px 36px 60px; width: 100%; }
 .vista-titulo { font-size: 28px; margin: 0 0 4px; }
 .vista-sub { color: var(--muted); font-size: 15px; margin: 0 0 28px; max-width: 720px; line-height: 1.55; }
 .vista-sub b { color: var(--text); }
 
-/* ---------- KPIs ---------- */
-/* min() no minmax evita criar coluna mais larga que a tela em telas estreitas. */
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 16px; margin-bottom: 32px; }
 .kpi {
   background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
   padding: 20px; display: flex; gap: 14px; align-items: center; box-shadow: var(--sombra);
   min-width: 0;
-  /* Faz a fonte do valor reagir à largura do CARD (cqi), não à da janela: é o que
-     importa quando o Windows está em 125%/150% e o viewport CSS encolhe. */
   container-type: inline-size;
 }
 .kpi .ico {
@@ -94,7 +85,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   display: grid; place-items: center; background: color-mix(in srgb, var(--kpi-cor, var(--accent)) 14%, white); color: var(--kpi-cor, var(--accent));
 }
 .kpi .ico svg { width: 22px; height: 22px; }
-/* Sem min-width:0 o bloco de texto não encolhe e o número vaza para fora do card. */
 .kpi-texto { min-width: 0; flex: 1 1 auto; }
 .kpi .rotulo {
   font-size: 12px; color: var(--muted); font-weight: 600;
@@ -103,17 +93,13 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .kpi .valor {
   font-weight: 800; letter-spacing: -0.03em; margin-top: 2px; line-height: 1.15;
   font-variant-numeric: tabular-nums;
-  /* Último recurso: quebra em duas linhas. Nunca cortar um número com reticências. */
   overflow-wrap: anywhere;
-  font-size: clamp(17px, 1.1vw + 8px, 26px);  /* fallback onde cqi não existe */
+  font-size: clamp(17px, 1.1vw + 8px, 26px);
   font-size: clamp(17px, 9cqi, 26px);
 }
 .kpi-detalhe { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 
-/* ---------- Balão de ajuda dos KPIs ---------- */
 .kpi.com-ajuda { position: relative; cursor: help; }
-/* O card com o balão aberto sobe na pilha, senão os cards da linha de baixo,
-   que vêm depois no DOM, são pintados por cima do balão. */
 .kpi.com-ajuda:hover, .kpi.com-ajuda:focus-visible { z-index: 30; }
 .kpi.com-ajuda:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .kpi .rotulo { display: flex; align-items: center; gap: 5px; }
@@ -140,8 +126,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 }
 @media (prefers-reduced-motion: reduce) { .kpi-ajuda { transition: none; } }
 
-/* Grade sem card órfão: o número de colunas é sempre divisor da quantidade de
-   cards (6 → 6/3/2/1, 4 → 4/2/1). O auto-fit encaixava 5 e deixava o 6º sozinho. */
 .kpis-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .kpis-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (min-width: 1800px) { .kpis-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
@@ -149,12 +133,11 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 @media (max-width: 1100px) { .kpis-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .kpis-6, .kpis-4 { grid-template-columns: minmax(0, 1fr); } }
 
-/* ---------- Cards ---------- */
 .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 24px; box-shadow: var(--sombra); display: flex; flex-direction: column; }
 .grade2, .grade3 { align-items: stretch; }
 .grade2 > .card, .grade3 > .card, .grade-mapa > .card { height: 100%; }
+.grade2 > .card > .grafico, .grade3 > .card > .grafico { margin-top: auto; }
 
-/* Barras de percentual (concentração) */
 .barras-pct { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
 .barra-linha { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: 12px; font-size: 13px; }
 .barra-nome { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -166,10 +149,8 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .card h3 { margin: 0; font-size: 16px; }
 .card .dica { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
 .card.mapa { padding: 14px; }
-/* A topbar é sticky (~58px): sem esta margem o título do card para escondido atrás dela. */
 .card-bairros { scroll-margin-top: 84px; }
 
-/* O mapa é posicionado absoluto dentro deste wrapper para o aviso poder flutuar sobre ele. */
 .mapa-wrap { position: relative; flex: 1 1 auto; min-height: 440px; }
 .mapa-aviso {
   position: absolute; inset: auto 0 14px 0; margin: 0 auto; width: fit-content; z-index: 500;
@@ -180,27 +161,19 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .grade3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .grade-mapa { display: grid; grid-template-columns: 2.4fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 20px; }
-/* O gap do grid já espaça; sem isto a regra `.card + .card` descia a lista 20px. */
 .grade-mapa > .card + .card { margin-top: 0; }
 .grafico { flex: 1 1 auto; min-height: 300px; height: 300px; width: 100%; }
-/* Para gráficos com muitas categorias de rótulo longo. */
 .grafico.alto { min-height: 400px; height: 400px; }@media (max-width: 1200px) { .grade3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1000px) { .grade2, .grade3, .grade-mapa { grid-template-columns: 1fr; } }
 
-/* Mapa e lista numa linha de altura FIXA: os dois cards têm sempre o mesmo
-   tamanho, o mapa nunca encolhe, e a lista rola dentro do próprio card em vez
-   de esticar a página. */
 @media (min-width: 1001px) {
   .grade-mapa { height: clamp(560px, calc(100vh - 190px), 860px); }
   .grade-mapa > .card { height: 100%; min-height: 0; }
   .grade-mapa > .card:not(.mapa) { overflow-y: auto; }
   .grade-mapa .ranking.rolavel { max-height: none; overflow: visible; }
-  /* A altura mínima agora é garantida pelo card; o mapa só preenche o que sobra
-     (senão, com a barra de comparação aberta, estouraria o card). */
   .grade-mapa .mapa-wrap { min-height: 0; }
 }
 
-/* ---------- Mapa: ações e comparação ---------- */
 .mapa-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .lista-titulo { margin-bottom: 12px !important; }
 .comparar-barra { display: flex; flex-direction: column; gap: 8px; margin: -8px 0 12px; }
@@ -209,7 +182,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .busca-mun { position: relative; }
 .busca-mun .busca { margin-bottom: 0; }
 .busca-mun-lista {
-  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1100; /* acima dos controles do Leaflet (1000) */
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1100;
   list-style: none; margin: 0; padding: 4px; max-height: 300px; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
   box-shadow: 0 8px 24px rgba(20, 30, 50, .12);
@@ -222,14 +195,12 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .busca-mun-lista .uf { color: var(--muted); font-size: 12px; font-weight: 700; }
 .busca-mun-vazio { padding: 10px 12px; color: var(--muted); font-size: 13px; }
 
-/* ---------- Segmentador ---------- */
 .segmentador { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
 .segmentador button { border: none; background: transparent; color: var(--muted); cursor: pointer; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; transition: all .12s; }
 .segmentador button:hover { color: var(--text); }
 .segmentador button.ativo { background: var(--panel); color: var(--text); box-shadow: var(--sombra); }
 .segmentador button:disabled, .segmentador button:disabled:hover { opacity: .4; color: var(--muted); cursor: not-allowed; }
 
-/* ---------- Seletor de período ---------- */
 .periodo { position: relative; }
 .periodo-gatilho {
   display: inline-flex; align-items: center; gap: 8px;
@@ -313,7 +284,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   .cal-meses { grid-template-columns: 1fr; }
 }
 
-/* ---------- Ranking / busca ---------- */
 .busca { width: 100%; margin-bottom: 10px; padding: 9px 12px; font-size: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2); color: var(--text); }
 .busca:focus { outline: none; border-color: var(--accent); }
 .ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -336,19 +306,18 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .meso-bloco .ranking li.sel { background: var(--accent); color: #fff; }
 .card h3.comEspaco { margin-top: 0; }
 
-/* ---------- Qualidade dos dados ---------- */
 .nota-ponte {
   margin: -12px 0 32px; padding: 14px 18px; border-radius: 12px; max-width: 980px;
   background: var(--panel); border: 1px solid var(--border); color: var(--muted);
   font-size: 14px; line-height: 1.55;
 }
 .nota-ponte b { color: var(--text); }
+.nota-ponte.nota-intro { margin: 0 0 24px; }
 .secao-titulo { font-size: 18px; margin: 0 0 4px; }
 .secao-sub { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
-.kpis-compactos { gap: 12px; } /* colunas vêm do .kpis-6 */
+.kpis-compactos { gap: 12px; }
 .kpis-compactos .kpi { padding: 16px; }
 
-/* ---------- Panorama da cidade ---------- */
 .panorama-doencas { display: flex; flex-wrap: wrap; gap: 10px; margin: -14px 0 24px; }
 .doenca-chip {
   display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted);
@@ -358,7 +327,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .doenca-chip b { color: var(--text); font-variant-numeric: tabular-nums; }
 .doenca-chip em { font-style: normal; color: var(--faint); font-size: 12px; }
 
-/* ---------- Comparação de municípios ---------- */
 .comp-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; align-items: center; }
 .chip {

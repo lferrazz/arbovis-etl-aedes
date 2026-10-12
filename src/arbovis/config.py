@@ -31,6 +31,7 @@ def _env(chave: str, padrao: str | None = None) -> str:
 PROJECT_ID = _env("GCP_PROJECT_ID")
 LOCATION = _env("BQ_LOCATION", "southamerica-east1")
 API_KEY = os.getenv("API_KEY")
+FATO_TABELA = os.getenv("FATO_TABELA", "fato_notificacao")
 
 
 def _resolver_credenciais() -> None:
